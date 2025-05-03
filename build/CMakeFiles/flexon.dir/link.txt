@@ -1,0 +1,1 @@
+/usr/bin/c++ -g -Wl,--dependency-file=CMakeFiles/flexon.dir/link.d CMakeFiles/flexon.dir/include/flexon/View.cpp.o CMakeFiles/flexon.dir/include/flexon/composable.cpp.o CMakeFiles/flexon.dir/renderer/GUI/flexonGuiRenderer.cpp.o CMakeFiles/flexon.dir/src/main.cpp.o -o flexon  /usr/lib/libGL.so /usr/lib/libGLU.so -lglfw /usr/lib/libxml2.so -lcurses -lform

@@ -1,0 +1,1 @@
+/usr/bin/c++ -Wl,--dependency-file=CMakeFiles/flexon.dir/link.d CMakeFiles/flexon.dir/src/flextui/main.cpp.o -o flexon  /usr/lib/libxml2.so -lcurses -lform

@@ -13,8 +13,7 @@ bool initGUI(graphics *);
 
 class flexonRender {
 public:
-  flexonRender();
-  ~flexonRender();
+  void Render(graphics *);
 };
 #endif // !__FLEXON_GUI_RENDERER__
 ;

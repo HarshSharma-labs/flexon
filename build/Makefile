@@ -129,6 +129,30 @@ flexon/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/flexon.dir/build.make CMakeFiles/flexon.dir/build
 .PHONY : flexon/fast
 
+include/flexon.o: include/flexon.cpp.o
+.PHONY : include/flexon.o
+
+# target to build an object file
+include/flexon.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/flexon.dir/build.make CMakeFiles/flexon.dir/include/flexon.cpp.o
+.PHONY : include/flexon.cpp.o
+
+include/flexon.i: include/flexon.cpp.i
+.PHONY : include/flexon.i
+
+# target to preprocess a source file
+include/flexon.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/flexon.dir/build.make CMakeFiles/flexon.dir/include/flexon.cpp.i
+.PHONY : include/flexon.cpp.i
+
+include/flexon.s: include/flexon.cpp.s
+.PHONY : include/flexon.s
+
+# target to generate assembly for a file
+include/flexon.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/flexon.dir/build.make CMakeFiles/flexon.dir/include/flexon.cpp.s
+.PHONY : include/flexon.cpp.s
+
 include/flexon/View.o: include/flexon/View.cpp.o
 .PHONY : include/flexon/View.o
 
@@ -234,6 +258,9 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... flexon"
+	@echo "... include/flexon.o"
+	@echo "... include/flexon.i"
+	@echo "... include/flexon.s"
 	@echo "... include/flexon/View.o"
 	@echo "... include/flexon/View.i"
 	@echo "... include/flexon/View.s"

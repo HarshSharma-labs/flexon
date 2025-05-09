@@ -1,9 +1,8 @@
-CMakeFiles/flexon.dir/include/flexon/View.cpp.o: \
- /home/harsh/Desktop/cpp/flexon/include/flexon/View.cpp \
+CMakeFiles/flexon.dir/include/flexon.cpp.o: \
+ /home/harsh/Desktop/cpp/flexon/include/flexon.cpp \
  /usr/include/stdc-predef.h \
- /home/harsh/Desktop/cpp/flexon/include/flexon/View.hpp \
- /home/harsh/Desktop/cpp/flexon/include/flexon/../flexon.hpp \
- /home/harsh/Desktop/cpp/flexon/include/flexon/../../renderer/GUI/flexonGuiRenderer.hpp \
+ /home/harsh/Desktop/cpp/flexon/include/flexon.hpp \
+ /home/harsh/Desktop/cpp/flexon/include/../renderer/GUI/flexonGuiRenderer.hpp \
  /usr/include/GLFW/glfw3.h \
  /usr/lib/gcc/x86_64-pc-linux-gnu/15.1.1/include/stddef.h \
  /usr/lib/gcc/x86_64-pc-linux-gnu/15.1.1/include/stdint.h \
@@ -17,7 +16,7 @@ CMakeFiles/flexon.dir/include/flexon/View.cpp.o: \
  /usr/include/bits/stdint-intn.h /usr/include/bits/stdint-uintn.h \
  /usr/include/bits/stdint-least.h /usr/include/GL/gl.h \
  /usr/include/GL/glext.h /usr/include/KHR/khrplatform.h \
- /home/harsh/Desktop/cpp/flexon/include/flexon/../flexon/view.hpp \
+ /home/harsh/Desktop/cpp/flexon/include/flexon/view.hpp \
  /usr/include/c++/15.1.1/cstdint \
  /usr/include/c++/15.1.1/x86_64-pc-linux-gnu/bits/c++config.h \
  /usr/include/c++/15.1.1/x86_64-pc-linux-gnu/bits/os_defines.h \
@@ -79,24 +78,4 @@ CMakeFiles/flexon.dir/include/flexon/View.cpp.o: \
  /usr/include/c++/15.1.1/bits/stl_vector.h \
  /usr/include/c++/15.1.1/bits/stl_bvector.h \
  /usr/include/c++/15.1.1/bits/vector.tcc /usr/include/c++/15.1.1/array \
- /usr/include/c++/15.1.1/compare \
- /home/harsh/Desktop/cpp/flexon/include/flexon/composable.hpp \
- /home/harsh/Desktop/cpp/flexon/include/flexon/view.hpp \
- /usr/include/c++/15.1.1/cstdlib /usr/include/stdlib.h \
- /usr/include/bits/waitflags.h /usr/include/bits/waitstatus.h \
- /usr/include/bits/floatn.h /usr/include/bits/floatn-common.h \
- /usr/include/bits/types/locale_t.h /usr/include/bits/types/__locale_t.h \
- /usr/include/sys/types.h /usr/include/bits/types/clock_t.h \
- /usr/include/bits/types/clockid_t.h /usr/include/bits/types/time_t.h \
- /usr/include/bits/types/timer_t.h /usr/include/endian.h \
- /usr/include/bits/endian.h /usr/include/bits/endianness.h \
- /usr/include/bits/byteswap.h /usr/include/bits/uintn-identity.h \
- /usr/include/sys/select.h /usr/include/bits/select.h \
- /usr/include/bits/types/sigset_t.h /usr/include/bits/types/__sigset_t.h \
- /usr/include/bits/types/struct_timeval.h \
- /usr/include/bits/types/struct_timespec.h \
- /usr/include/bits/pthreadtypes.h /usr/include/bits/thread-shared-types.h \
- /usr/include/bits/pthreadtypes-arch.h \
- /usr/include/bits/atomic_wide_counter.h /usr/include/bits/struct_mutex.h \
- /usr/include/bits/struct_rwlock.h /usr/include/alloca.h \
- /usr/include/bits/stdlib-float.h /usr/include/c++/15.1.1/bits/std_abs.h
+ /usr/include/c++/15.1.1/compare

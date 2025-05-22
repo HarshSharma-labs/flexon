@@ -11,12 +11,12 @@ typedef struct {
 
 } layout;
 
-class flexon_view {
+class flexonView {
 public:
-  flexon_view() {}
-  flexon_view *parent{nullptr};
-  flexon_view *children{nullptr};
-  flexon_view *neighbour{nullptr};
+  flexonView() {}
+  flexonView *parent{nullptr};
+  flexonView *children{nullptr};
+  flexonView *neighbour{nullptr};
   uint64_t view_id{0};
   bool isViewText{false};
   char *Text{nullptr};
@@ -31,12 +31,12 @@ typedef struct tflag {
   int justifycontent : 4;
   int backgroundColor;
   int foregroundColor;
-} term_prop;
+} termProp;
 
-class flexon_view_tui {
+class flexonViewTui {
 public:
 private:
-  term_prop layout;
+  termProp layout;
 };
 
 #endif

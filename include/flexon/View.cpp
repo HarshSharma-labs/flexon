@@ -4,7 +4,7 @@
 #include <cstdlib>
 #include <functional>
 
-flexon_view **tmp = {nullptr};
+flexonView **tmp = {nullptr};
 
 View::View(std::function<void(mine)> composable) {
 

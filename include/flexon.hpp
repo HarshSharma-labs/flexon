@@ -6,17 +6,17 @@
 #include <GLFW/glfw3.h>
 #include <functional>
 
-typedef flexon_view *&mine;
-typedef flexon_view *&child;
-extern flexon_view **tmp;
+typedef flexonView *&mine;
+typedef flexonView *&child;
+extern flexonView **tmp;
 
 class flexon : private flexonRender {
 public:
-  flexon(std::function<void(flexon_view **&)>);
+  flexon(std::function<void(flexonView **&)>);
 
 private:
   void flexonInitGraphics(void);
-  flexon_view *root{nullptr};
+  flexonView root;
   graphics flexonGraphics = {.flexonWindow = nullptr,
                              .flexonAppName = (char *)"hello flexon",
                              .windowHeight = 500,

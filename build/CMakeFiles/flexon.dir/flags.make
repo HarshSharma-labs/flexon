@@ -6,5 +6,5 @@ CXX_DEFINES =
 
 CXX_INCLUDES = -I"/home/harsh/Desktop/cpp/flexon/generated/*" -I"/home/harsh/Desktop/cpp/flexon/include/*" -I"/home/harsh/Desktop/cpp/flexon/include/flexon/*" -I"/home/harsh/Desktop/cpp/flexon/src/*" -I"/home/harsh/Desktop/cpp/flexon/renderer/GUI/*" -I"/home/harsh/Desktop/cpp/flexon/renderer/*" -I"/home/harsh/Desktop/cpp/flexon/renderer/TUI/*" -I/usr/include/libxml2
 
-CXX_FLAGS = -g
+CXX_FLAGS = 
 

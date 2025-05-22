@@ -4,5 +4,5 @@
 #include "../flexon.hpp"
 #include "view.hpp"
 #include <functional>
-flexon_view *flexon_compose_tree(flexon_view ***, std::function<void(mine)> &);
+flexonView *flexon_compose_tree(flexonView ***, std::function<void(mine)> &);
 #endif

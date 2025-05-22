@@ -148,7 +148,7 @@ CMAKE_PROJECT_DESCRIPTION:STATIC=
 CMAKE_PROJECT_HOMEPAGE_URL:STATIC=
 
 //Value Computed by CMake
-CMAKE_PROJECT_NAME:STATIC=flextui
+CMAKE_PROJECT_NAME:STATIC=flexon
 
 //Path to a program.
 CMAKE_RANLIB:FILEPATH=/usr/bin/ranlib
@@ -292,6 +292,15 @@ PKG_CONFIG_ARGN:STRING=
 
 //pkg-config executable
 PKG_CONFIG_EXECUTABLE:FILEPATH=/usr/bin/pkg-config
+
+//Value Computed by CMake
+flexon_BINARY_DIR:STATIC=/home/harsh/Desktop/cpp/flexon/build
+
+//Value Computed by CMake
+flexon_IS_TOP_LEVEL:STATIC=ON
+
+//Value Computed by CMake
+flexon_SOURCE_DIR:STATIC=/home/harsh/Desktop/cpp/flexon
 
 //Value Computed by CMake
 flextui_BINARY_DIR:STATIC=/home/harsh/Desktop/cpp/flexon/build

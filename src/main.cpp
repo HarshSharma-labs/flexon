@@ -3,15 +3,12 @@
 #include "../include/flexon/View.hpp"
 #include "../renderer/GUI/flexonGuiRenderer.hpp"
 #include <cassert>
+
+char *hello = "hello world!";
+
 int main() {
 
-  char *hello = "hello world!";
-
-  flexon([&hello](flexon_view **&mineNode) {
-    View([&hello](mine mineNode) {
-      Text([&hello](mine mineNode) { mineNode->Text = hello; });
-    });
-  });
+  flexon([](flexonView **&mineNode) { return; });
 
   //  flexonRender render;
   return 0;

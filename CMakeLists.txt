@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(flextui)
+project(flexon)
 
 set(OpenGL_GL_PREFERENCE LEGACY)
 # Find required packages
@@ -13,7 +13,7 @@ pkg_search_module(GLFW REQUIRED glfw3)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(GENERATED_HEADER ${PROJECT_SOURCE_DIR}/generated/flexontoken.hpp)
 set(GENERATED_CPP ${PROJECT_SOURCE_DIR}/generated/flexontoken.cpp)
-set(CMAKE_BUILD_TYPE Debug)
+#set(CMAKE_BUILD_TYPE Debug)
 
 set(ENGINE_NAME flexon)
 

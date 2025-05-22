@@ -133,8 +133,8 @@ void glrefresh(GLFWwindow *window) {
   initRectangle(tmp_graphics);
   int color = glGetUniformLocation(glshaderprogram, "uColor");
   int boxSize = glGetUniformLocation(glshaderprogram, "boxSize");
-  int uresolution = glGetUniformLocation(glshaderprogram, "u_resolution");
-  glUniform2f(uresolution, windowXY[0], windowXY[1]);
+  // int uresolution = glGetUniformLocation(glshaderprogram, "u_resolution");
+  // glUniform2f(uresolution, windowXY[0], windowXY[1]);
   glUniform4f(boxSize, BoxSize[0], BoxSize[1], BoxSize[2], BoxSize[3]);
   glUniform3f(color, genCol(), genCol(), genCol());
   glBindVertexArray(VAOs[0]);
@@ -201,10 +201,11 @@ void flexonRender::calculatelayout(flexonView *__node, layout *_parentlay) {
   return;
 }
 void initRectangle(graphics *test) {
-  float height = (float)test->windowHeight;
-  float width = (float)test->windowWidth / 2;
-  float x = 0.0f;
-  float y = 0.0f;
+  float height = (float)test->windowHeight / 2.0f;
+  float width = (float)test->windowWidth / 2.0f;
+  float x = width / 2.0f;
+  float y = height / 2.0f;
+
   rect1[0] = (2.0f * (x + width)) / (float)test->windowWidth - 1;
   rect1[1] = 1 - (2 * y) / (float)test->windowHeight;
 
@@ -223,7 +224,7 @@ void initRectangle(graphics *test) {
   windowXY[0] = (float)test->windowWidth;
   windowXY[1] = (float)test->windowHeight;
   std::cout << width << " : " << height << std::endl;
-  std::cout << BoxSize[2] << " : " << BoxSize[2] << std::endl;
+  std::cout << BoxSize[0] << " : " << BoxSize[1] << std::endl;
 };
 
 void flexonRender::Render(graphics *window) {
@@ -263,8 +264,6 @@ void flexonRender::Render(graphics *window) {
 void resize_callback(GLFWwindow *window, int width, int height) {
   std::cout << width << " : " << height << std::endl;
   glfwSetWindowSize(window, width, height);
-  tmp_graphics->windowWidth = width;
-  tmp_graphics->windowHeight = height;
   glrefresh(window);
   return;
 }

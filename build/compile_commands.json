@@ -1,31 +1,31 @@
 [
 {
   "directory": "/home/harsh/Desktop/cpp/flexon/build",
-  "command": "/usr/bin/c++  -I\"/home/harsh/Desktop/cpp/flexon/generated/*\" -I\"/home/harsh/Desktop/cpp/flexon/include/*\" -I\"/home/harsh/Desktop/cpp/flexon/include/flexon/*\" -I\"/home/harsh/Desktop/cpp/flexon/src/*\" -I\"/home/harsh/Desktop/cpp/flexon/renderer/GUI/*\" -I\"/home/harsh/Desktop/cpp/flexon/renderer/*\" -I\"/home/harsh/Desktop/cpp/flexon/renderer/TUI/*\" -I/usr/include/libxml2 -g -o CMakeFiles/flexon.dir/include/flexon.cpp.o -c /home/harsh/Desktop/cpp/flexon/include/flexon.cpp",
+  "command": "/usr/bin/c++  -I\"/home/harsh/Desktop/cpp/flexon/generated/*\" -I\"/home/harsh/Desktop/cpp/flexon/include/*\" -I\"/home/harsh/Desktop/cpp/flexon/include/flexon/*\" -I\"/home/harsh/Desktop/cpp/flexon/src/*\" -I\"/home/harsh/Desktop/cpp/flexon/renderer/GUI/*\" -I\"/home/harsh/Desktop/cpp/flexon/renderer/*\" -I\"/home/harsh/Desktop/cpp/flexon/renderer/TUI/*\" -I/usr/include/libxml2  -o CMakeFiles/flexon.dir/include/flexon.cpp.o -c /home/harsh/Desktop/cpp/flexon/include/flexon.cpp",
   "file": "/home/harsh/Desktop/cpp/flexon/include/flexon.cpp",
   "output": "CMakeFiles/flexon.dir/include/flexon.cpp.o"
 },
 {
   "directory": "/home/harsh/Desktop/cpp/flexon/build",
-  "command": "/usr/bin/c++  -I\"/home/harsh/Desktop/cpp/flexon/generated/*\" -I\"/home/harsh/Desktop/cpp/flexon/include/*\" -I\"/home/harsh/Desktop/cpp/flexon/include/flexon/*\" -I\"/home/harsh/Desktop/cpp/flexon/src/*\" -I\"/home/harsh/Desktop/cpp/flexon/renderer/GUI/*\" -I\"/home/harsh/Desktop/cpp/flexon/renderer/*\" -I\"/home/harsh/Desktop/cpp/flexon/renderer/TUI/*\" -I/usr/include/libxml2 -g -o CMakeFiles/flexon.dir/include/flexon/View.cpp.o -c /home/harsh/Desktop/cpp/flexon/include/flexon/View.cpp",
+  "command": "/usr/bin/c++  -I\"/home/harsh/Desktop/cpp/flexon/generated/*\" -I\"/home/harsh/Desktop/cpp/flexon/include/*\" -I\"/home/harsh/Desktop/cpp/flexon/include/flexon/*\" -I\"/home/harsh/Desktop/cpp/flexon/src/*\" -I\"/home/harsh/Desktop/cpp/flexon/renderer/GUI/*\" -I\"/home/harsh/Desktop/cpp/flexon/renderer/*\" -I\"/home/harsh/Desktop/cpp/flexon/renderer/TUI/*\" -I/usr/include/libxml2  -o CMakeFiles/flexon.dir/include/flexon/View.cpp.o -c /home/harsh/Desktop/cpp/flexon/include/flexon/View.cpp",
   "file": "/home/harsh/Desktop/cpp/flexon/include/flexon/View.cpp",
   "output": "CMakeFiles/flexon.dir/include/flexon/View.cpp.o"
 },
 {
   "directory": "/home/harsh/Desktop/cpp/flexon/build",
-  "command": "/usr/bin/c++  -I\"/home/harsh/Desktop/cpp/flexon/generated/*\" -I\"/home/harsh/Desktop/cpp/flexon/include/*\" -I\"/home/harsh/Desktop/cpp/flexon/include/flexon/*\" -I\"/home/harsh/Desktop/cpp/flexon/src/*\" -I\"/home/harsh/Desktop/cpp/flexon/renderer/GUI/*\" -I\"/home/harsh/Desktop/cpp/flexon/renderer/*\" -I\"/home/harsh/Desktop/cpp/flexon/renderer/TUI/*\" -I/usr/include/libxml2 -g -o CMakeFiles/flexon.dir/include/flexon/composable.cpp.o -c /home/harsh/Desktop/cpp/flexon/include/flexon/composable.cpp",
+  "command": "/usr/bin/c++  -I\"/home/harsh/Desktop/cpp/flexon/generated/*\" -I\"/home/harsh/Desktop/cpp/flexon/include/*\" -I\"/home/harsh/Desktop/cpp/flexon/include/flexon/*\" -I\"/home/harsh/Desktop/cpp/flexon/src/*\" -I\"/home/harsh/Desktop/cpp/flexon/renderer/GUI/*\" -I\"/home/harsh/Desktop/cpp/flexon/renderer/*\" -I\"/home/harsh/Desktop/cpp/flexon/renderer/TUI/*\" -I/usr/include/libxml2  -o CMakeFiles/flexon.dir/include/flexon/composable.cpp.o -c /home/harsh/Desktop/cpp/flexon/include/flexon/composable.cpp",
   "file": "/home/harsh/Desktop/cpp/flexon/include/flexon/composable.cpp",
   "output": "CMakeFiles/flexon.dir/include/flexon/composable.cpp.o"
 },
 {
   "directory": "/home/harsh/Desktop/cpp/flexon/build",
-  "command": "/usr/bin/c++  -I\"/home/harsh/Desktop/cpp/flexon/generated/*\" -I\"/home/harsh/Desktop/cpp/flexon/include/*\" -I\"/home/harsh/Desktop/cpp/flexon/include/flexon/*\" -I\"/home/harsh/Desktop/cpp/flexon/src/*\" -I\"/home/harsh/Desktop/cpp/flexon/renderer/GUI/*\" -I\"/home/harsh/Desktop/cpp/flexon/renderer/*\" -I\"/home/harsh/Desktop/cpp/flexon/renderer/TUI/*\" -I/usr/include/libxml2 -g -o CMakeFiles/flexon.dir/renderer/GUI/flexonGuiRenderer.cpp.o -c /home/harsh/Desktop/cpp/flexon/renderer/GUI/flexonGuiRenderer.cpp",
+  "command": "/usr/bin/c++  -I\"/home/harsh/Desktop/cpp/flexon/generated/*\" -I\"/home/harsh/Desktop/cpp/flexon/include/*\" -I\"/home/harsh/Desktop/cpp/flexon/include/flexon/*\" -I\"/home/harsh/Desktop/cpp/flexon/src/*\" -I\"/home/harsh/Desktop/cpp/flexon/renderer/GUI/*\" -I\"/home/harsh/Desktop/cpp/flexon/renderer/*\" -I\"/home/harsh/Desktop/cpp/flexon/renderer/TUI/*\" -I/usr/include/libxml2  -o CMakeFiles/flexon.dir/renderer/GUI/flexonGuiRenderer.cpp.o -c /home/harsh/Desktop/cpp/flexon/renderer/GUI/flexonGuiRenderer.cpp",
   "file": "/home/harsh/Desktop/cpp/flexon/renderer/GUI/flexonGuiRenderer.cpp",
   "output": "CMakeFiles/flexon.dir/renderer/GUI/flexonGuiRenderer.cpp.o"
 },
 {
   "directory": "/home/harsh/Desktop/cpp/flexon/build",
-  "command": "/usr/bin/c++  -I\"/home/harsh/Desktop/cpp/flexon/generated/*\" -I\"/home/harsh/Desktop/cpp/flexon/include/*\" -I\"/home/harsh/Desktop/cpp/flexon/include/flexon/*\" -I\"/home/harsh/Desktop/cpp/flexon/src/*\" -I\"/home/harsh/Desktop/cpp/flexon/renderer/GUI/*\" -I\"/home/harsh/Desktop/cpp/flexon/renderer/*\" -I\"/home/harsh/Desktop/cpp/flexon/renderer/TUI/*\" -I/usr/include/libxml2 -g -o CMakeFiles/flexon.dir/src/main.cpp.o -c /home/harsh/Desktop/cpp/flexon/src/main.cpp",
+  "command": "/usr/bin/c++  -I\"/home/harsh/Desktop/cpp/flexon/generated/*\" -I\"/home/harsh/Desktop/cpp/flexon/include/*\" -I\"/home/harsh/Desktop/cpp/flexon/include/flexon/*\" -I\"/home/harsh/Desktop/cpp/flexon/src/*\" -I\"/home/harsh/Desktop/cpp/flexon/renderer/GUI/*\" -I\"/home/harsh/Desktop/cpp/flexon/renderer/*\" -I\"/home/harsh/Desktop/cpp/flexon/renderer/TUI/*\" -I/usr/include/libxml2  -o CMakeFiles/flexon.dir/src/main.cpp.o -c /home/harsh/Desktop/cpp/flexon/src/main.cpp",
   "file": "/home/harsh/Desktop/cpp/flexon/src/main.cpp",
   "output": "CMakeFiles/flexon.dir/src/main.cpp.o"
 }

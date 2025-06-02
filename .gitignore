@@ -3,3 +3,5 @@
 ./CMakeFiles
 ./compile_command.json
 ./backup
+./.cache
+./generated

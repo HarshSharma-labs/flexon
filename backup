@@ -131,6 +131,7 @@ void glrefresh(GLFWwindow *window) {
 
   glUseProgram(glshaderprogram);
   initRectangle(tmp_graphics);
+  
   int color = glGetUniformLocation(glshaderprogram, "uColor");
   int boxSize = glGetUniformLocation(glshaderprogram, "boxSize");
   // int uresolution = glGetUniformLocation(glshaderprogram, "u_resolution");

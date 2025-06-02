@@ -5,8 +5,15 @@ void flexon::flexonInitGraphics(void) {
     flexonContextGui = flexonGraphics.flexonWindow;
     root.lay.height = flexonGraphics.windowHeight;
     root.lay.width = flexonGraphics.windowWidth;
-    Render(&flexonGraphics);
-    // calculatelayout(&root, &root.lay);
+    root.lay.x = 0.0f;
+    root.lay.y = 0.0f;
+    fragShader.shaderProgram = SHADER::loadShader();
+    SHADER::loadShaderUniform(fragShader.shaderProgram, &fragShader,
+                              SHADER::viewUniforms, &objRender);
+
+    calculatelayout(root.children, &root.lay, &root.lay);
+
+    startGui(&flexonGraphics, root.children, &fragShader);
   }
   return;
 }
@@ -14,6 +21,7 @@ void flexon::flexonInitGraphics(void) {
 flexon::flexon(std::function<void(flexonView **&)> composable) {
   tmp = &root.children;
   composable(tmp);
+
   flexonInitGraphics();
   return;
 }

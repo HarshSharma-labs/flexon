@@ -6,6 +6,7 @@
 class View {
 public:
   View(std::function<void(mine)>);
+  View(std::function<void()>);
 };
 
 #endif

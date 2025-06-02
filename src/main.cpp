@@ -1,15 +1,15 @@
-#include "../include/flexon.hpp"
-#include "../include/flexon/Text.hpp"
-#include "../include/flexon/View.hpp"
-#include "../renderer/GUI/flexonGuiRenderer.hpp"
-#include <cassert>
-
-char *hello = "hello world!";
-
+#include "../flexon_modules/components/View.hpp"
+#include "../flexon_modules/flexon.hpp"
+#include <iostream>
 int main() {
 
-  flexon([](flexonView **&mineNode) { return; });
+  flexon([](void) {
+    View([](void) { std::cout << "Hello flexon" << std::endl; });
+    View([](capture mine) {
+      flexonModifier(mine).printHello();
+      std::cout << "Hello flexon" << std::endl;
+    });
+  });
 
-  //  flexonRender render;
   return 0;
 }

@@ -1,147 +1,25 @@
 #include "flexonGuiRenderer.hpp"
+#include "shaderwrapper.hpp"
 #include <GL/gl.h>
 #include <GLES3/gl3.h>
 #include <GLFW/glfw3.h>
 #include <cassert>
 #include <cstdlib>
-#include <filesystem>
-#include <fstream>
 #include <iostream>
-#include <sstream>
 #include <unistd.h>
 
 void glrefresh(GLFWwindow *);
 float genCol();
-void initGlShader();
-void load_shader();
 void resize_callback(GLFWwindow *, int, int);
 void maximize_callback(GLFWwindow *, int);
-void initRectangle(graphics *);
+void setUniformView(SHADER::viewShaderProgram *, SHADER::FRAGSHADER *);
 graphics *tmp_graphics{nullptr};
-unsigned int vertshader{0};
-unsigned int fragshader{0};
-unsigned int glshaderprogram;
-
-float rect1[] = {
-    0.8f, 0.8f, 0.0f, // top right
-    0.8f, 0.2f, 0.0f, // bottom right
-    0.2f, 0.2f, 0.0f, // bottom left
-    0.2f, 0.8f, 0.0f  // top left
-};
-float windowXY[] = {0.0f, 0.0f};
-float BoxSize[] = {0.0f, 0.0f, 0.0f, 0.0f};
-unsigned int indices[] = {0, 1, 3, 1, 2, 3};
-
-unsigned int VAOs[2], VBOs[2], EBO;
-
-std::string vertShaderSrc;
-std::string fragShaderSrc;
-const char *VERT_SHADER = nullptr;
-const char *FRAG_SHADER = nullptr;
-
-void load_shader() {
-  std::filesystem::path vertShaderPath =
-      "/home/harsh/flexon/renderer/GUI/shaders/vert.glsl";
-  std::filesystem::path fragShaderPath =
-      "/home/harsh/flexon/renderer/GUI/shaders/frag.glsl";
-
-  std::ifstream shaderfile;
-  std::stringstream buffer;
-
-  // Load vertex shader
-  std::cout << "Loading shader from path: " << vertShaderPath << std::endl;
-  shaderfile.open(vertShaderPath);
-
-  if (shaderfile.is_open()) {
-    buffer << shaderfile.rdbuf();
-    vertShaderSrc = buffer.str();
-    VERT_SHADER = vertShaderSrc.c_str();
-    buffer.str("");
-    buffer.clear(); // reset buffer
-    shaderfile.close();
-  } else {
-    std::cerr << "Failed to open vertex shader file.\n";
-  }
-
-  // Load fragment shader
-  std::cout << "Loading shader from path: " << fragShaderPath << std::endl;
-  shaderfile.open(fragShaderPath);
-  if (shaderfile.is_open()) {
-    buffer << shaderfile.rdbuf();
-    fragShaderSrc = buffer.str();
-    FRAG_SHADER = fragShaderSrc.c_str();
-    shaderfile.close();
-  } else {
-    std::cerr << "Failed to open fragment shader file.\n";
-  }
-}
-
-void initGlShader() {
-  load_shader();
-  if (FRAG_SHADER == nullptr || VERT_SHADER == nullptr) {
-    std::cout << "shader empty" << std::endl;
-    return;
-  }
-  vertshader = glCreateShader(GL_VERTEX_SHADER);
-  glShaderSource(vertshader, 1, &VERT_SHADER, NULL);
-  glCompileShader(vertshader);
-
-  int success;
-  char infolog[512];
-  glGetShaderiv(vertshader, GL_COMPILE_STATUS, &success);
-  glGetShaderInfoLog(vertshader, 512, NULL, infolog);
-  if (!success) {
-    std::cerr << "Vertex Shader Compilation Failed: \n" << infolog << std::endl;
-  }
-
-  fragshader = glCreateShader(GL_FRAGMENT_SHADER);
-  glShaderSource(fragshader, 1, &FRAG_SHADER, NULL);
-  glCompileShader(fragshader);
-
-  glGetShaderiv(fragshader, GL_COMPILE_STATUS, &success);
-  glGetShaderInfoLog(fragshader, 512, NULL, infolog);
-  if (!success) {
-    std::cerr << "Fragment Shader Compilation Failed: \n"
-              << infolog << std::endl;
-  }
-
-  glshaderprogram = glCreateProgram();
-  glAttachShader(glshaderprogram, vertshader);
-  glAttachShader(glshaderprogram, fragshader);
-  glLinkProgram(glshaderprogram);
-
-  glGetProgramiv(glshaderprogram, GL_LINK_STATUS, &success);
-  glGetProgramInfoLog(glshaderprogram, 512, NULL, infolog);
-
-  if (!success) {
-    std::cout << "glProgram error: " << infolog;
-  } else {
-    std::cout << "Shader Reloaded" << std::endl;
-  }
-}
-
+flexonView *tmpnode;
+SHADER::viewShaderProgram *tmpprogram;
 float genCol() {
   float random = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
   return random;
 }
-
-void glrefresh(GLFWwindow *window) {
-  glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-  glClear(GL_COLOR_BUFFER_BIT);
-
-  glUseProgram(glshaderprogram);
-  initRectangle(tmp_graphics);
-  int color = glGetUniformLocation(glshaderprogram, "uColor");
-  int boxSize = glGetUniformLocation(glshaderprogram, "boxSize");
-  int uresolution = glGetUniformLocation(glshaderprogram, "u_resolution");
-  glUniform2f(uresolution, windowXY[0], windowXY[1]);
-  glUniform4f(boxSize, BoxSize[0], BoxSize[1], BoxSize[2], BoxSize[3]);
-  glUniform3f(color, genCol(), genCol(), genCol());
-  glBindVertexArray(VAOs[0]);
-  glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-  glfwSwapBuffers(window);
-};
-
 void framebuffer_size_callback(GLFWwindow *window, int width, int height) {
   glViewport(0, 0, width, height);
 }
@@ -153,13 +31,9 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action,
   }
   if (action == GLFW_PRESS) {
     if (key == 'R') {
-      glDeleteShader(vertshader);
-      glDeleteShader(fragshader);
-      vertshader = 0;
-      fragshader = 0;
-      glshaderprogram = 0;
-      initGlShader();
-      glrefresh(window);
+      //    glDeleteShader(vertshader);
+      // glDeleteShader(fragshader);
+      // glrefresh(window);
     }
     if (key == 'Q')
       glfwSetWindowShouldClose(window, GLFW_TRUE);
@@ -192,61 +66,34 @@ bool flexonRender::initGUI(graphics *param) {
   glViewport(0, 0, param->windowWidth, param->windowHeight);
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-  initGlShader();
 
   return true;
 }
+void drawNode(flexonView *__node, SHADER::viewShaderProgram *_program) {
 
-void flexonRender::calculatelayout(flexonView *__node, layout *_parentlay) {
+  glUseProgram(_program->shaderProgram);
+
+  GLuint VAO = __node->shaderData.VAO;
+  glBindVertexArray(VAO);
+  glUniform4f(_program->shaderUniformsLoc[VIEW_SHADER_BOXSIZE],
+              __node->shaderData.BoxSize.x, __node->shaderData.BoxSize.y,
+              __node->shaderData.BoxSize.z, __node->shaderData.BoxSize.w);
+  glUniform4f(_program->shaderUniformsLoc[VIEW_SHADER_COLOR_PRIMARY], genCol(),
+              genCol(), genCol(), 1.0f);
+  glUniform4f(_program->shaderUniformsLoc[VIEW_SHADER_BORDERRADIUS], 0.0f, 0.0f,
+              0.0f, 0.0f);
+  glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+  glfwSwapBuffers(tmp_graphics->flexonWindow);
   return;
-}
-void initRectangle(graphics *test) {
-  float height = (float)test->windowHeight;
-  float width = (float)test->windowWidth / 2;
-  float x = 0.0f;
-  float y = 0.0f;
-  rect1[0] = (2.0f * (x + width)) / (float)test->windowWidth - 1;
-  rect1[1] = 1 - (2 * y) / (float)test->windowHeight;
-
-  rect1[3] = (2 * (x + width)) / (float)test->windowWidth - 1;
-  rect1[4] = 1 - 2 * (y + height) / (float)test->windowHeight;
-
-  rect1[6] = (2 * x) / (float)test->windowWidth - 1;
-  rect1[7] = 1 - (2 * (y + height)) / (float)test->windowHeight;
-
-  rect1[9] = (2 * x) / (float)test->windowWidth - 1;
-  rect1[10] = 1 - (2 * y) / (float)test->windowHeight;
-  BoxSize[0] = width;
-  BoxSize[1] = height;
-  BoxSize[2] = x;
-  BoxSize[3] = y;
-  windowXY[0] = (float)test->windowWidth;
-  windowXY[1] = (float)test->windowHeight;
-  std::cout << width << " : " << height << std::endl;
-  std::cout << BoxSize[2] << " : " << BoxSize[2] << std::endl;
 };
 
-void flexonRender::Render(graphics *window) {
+void flexonRender::startGui(graphics *window, flexonView *node,
+                            SHADER::viewShaderProgram *_program) {
 
-  initRectangle(window);
   tmp_graphics = window;
-  glGenVertexArrays(1, VAOs);
-
-  glGenBuffers(1, VBOs);
-  glGenBuffers(1, &EBO);
-
-  // Set up rect1
-  glBindVertexArray(VAOs[0]);
-  glBindBuffer(GL_ARRAY_BUFFER, VBOs[0]);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(rect1), rect1, GL_STATIC_DRAW);
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices,
-               GL_STATIC_DRAW);
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
-  glEnableVertexAttribArray(0);
-
-  glClearColor(genCol(), genCol(), genCol(), 1.0f);
-  glClear(GL_COLOR_BUFFER_BIT);
+  tmpnode = node;
+  tmpprogram = _program;
+  drawNode(node, _program);
   glfwSwapBuffers(window->flexonWindow);
 
   while (!glfwWindowShouldClose(window->flexonWindow)) {
@@ -254,8 +101,7 @@ void flexonRender::Render(graphics *window) {
     glfwWaitEvents();
   }
 
-  glDeleteShader(vertshader);
-  glDeleteShader(fragshader);
+  SHADER::destroyShader();
   glfwDestroyWindow(window->flexonWindow);
   glfwTerminate();
 }
@@ -265,13 +111,13 @@ void resize_callback(GLFWwindow *window, int width, int height) {
   glfwSetWindowSize(window, width, height);
   tmp_graphics->windowWidth = width;
   tmp_graphics->windowHeight = height;
-  glrefresh(window);
+  drawNode(tmpnode, tmpprogram);
+
   return;
 }
 void maximize_callback(GLFWwindow *window, int maximized) {
   std::cout << "maximized" << maximized << std::endl;
+  drawNode(tmpnode, tmpprogram);
 
-  glrefresh(window);
   return;
-  void initRectangle(graphics *);
 }

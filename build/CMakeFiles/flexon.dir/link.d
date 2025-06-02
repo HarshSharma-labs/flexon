@@ -2,10 +2,7 @@ flexon: \
   /usr/lib/gcc/x86_64-pc-linux-gnu/15.1.1/../../../../lib/Scrt1.o \
   /usr/lib/gcc/x86_64-pc-linux-gnu/15.1.1/../../../../lib/crti.o \
   /usr/lib/gcc/x86_64-pc-linux-gnu/15.1.1/crtbeginS.o \
-  CMakeFiles/flexon.dir/include/flexon.cpp.o \
-  CMakeFiles/flexon.dir/include/flexon/View.cpp.o \
-  CMakeFiles/flexon.dir/include/flexon/composable.cpp.o \
-  CMakeFiles/flexon.dir/renderer/GUI/flexonGuiRenderer.cpp.o \
+  CMakeFiles/flexon.dir/flexon_modules/componentbase/flexonGlobal.cpp.o \
   CMakeFiles/flexon.dir/src/main.cpp.o \
   /usr/lib/libGL.so \
   /usr/lib/libGLU.so \
@@ -64,13 +61,7 @@ flexon: \
 
 /usr/lib/gcc/x86_64-pc-linux-gnu/15.1.1/crtbeginS.o:
 
-CMakeFiles/flexon.dir/include/flexon.cpp.o:
-
-CMakeFiles/flexon.dir/include/flexon/View.cpp.o:
-
-CMakeFiles/flexon.dir/include/flexon/composable.cpp.o:
-
-CMakeFiles/flexon.dir/renderer/GUI/flexonGuiRenderer.cpp.o:
+CMakeFiles/flexon.dir/flexon_modules/componentbase/flexonGlobal.cpp.o:
 
 CMakeFiles/flexon.dir/src/main.cpp.o:
 

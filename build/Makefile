@@ -57,10 +57,10 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/harsh/Desktop/cpp/flexon
+CMAKE_SOURCE_DIR = /home/harsh/flexon
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/harsh/Desktop/cpp/flexon/build
+CMAKE_BINARY_DIR = /home/harsh/flexon/build
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -87,9 +87,9 @@ rebuild_cache/fast: rebuild_cache
 
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/harsh/Desktop/cpp/flexon/build/CMakeFiles /home/harsh/Desktop/cpp/flexon/build//CMakeFiles/progress.marks
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/harsh/flexon/build/CMakeFiles /home/harsh/flexon/build//CMakeFiles/progress.marks
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/harsh/Desktop/cpp/flexon/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/harsh/flexon/build/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
@@ -129,101 +129,29 @@ flexon/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/flexon.dir/build.make CMakeFiles/flexon.dir/build
 .PHONY : flexon/fast
 
-include/flexon.o: include/flexon.cpp.o
-.PHONY : include/flexon.o
+flexon_modules/componentbase/flexonGlobal.o: flexon_modules/componentbase/flexonGlobal.cpp.o
+.PHONY : flexon_modules/componentbase/flexonGlobal.o
 
 # target to build an object file
-include/flexon.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/flexon.dir/build.make CMakeFiles/flexon.dir/include/flexon.cpp.o
-.PHONY : include/flexon.cpp.o
+flexon_modules/componentbase/flexonGlobal.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/flexon.dir/build.make CMakeFiles/flexon.dir/flexon_modules/componentbase/flexonGlobal.cpp.o
+.PHONY : flexon_modules/componentbase/flexonGlobal.cpp.o
 
-include/flexon.i: include/flexon.cpp.i
-.PHONY : include/flexon.i
-
-# target to preprocess a source file
-include/flexon.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/flexon.dir/build.make CMakeFiles/flexon.dir/include/flexon.cpp.i
-.PHONY : include/flexon.cpp.i
-
-include/flexon.s: include/flexon.cpp.s
-.PHONY : include/flexon.s
-
-# target to generate assembly for a file
-include/flexon.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/flexon.dir/build.make CMakeFiles/flexon.dir/include/flexon.cpp.s
-.PHONY : include/flexon.cpp.s
-
-include/flexon/View.o: include/flexon/View.cpp.o
-.PHONY : include/flexon/View.o
-
-# target to build an object file
-include/flexon/View.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/flexon.dir/build.make CMakeFiles/flexon.dir/include/flexon/View.cpp.o
-.PHONY : include/flexon/View.cpp.o
-
-include/flexon/View.i: include/flexon/View.cpp.i
-.PHONY : include/flexon/View.i
+flexon_modules/componentbase/flexonGlobal.i: flexon_modules/componentbase/flexonGlobal.cpp.i
+.PHONY : flexon_modules/componentbase/flexonGlobal.i
 
 # target to preprocess a source file
-include/flexon/View.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/flexon.dir/build.make CMakeFiles/flexon.dir/include/flexon/View.cpp.i
-.PHONY : include/flexon/View.cpp.i
+flexon_modules/componentbase/flexonGlobal.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/flexon.dir/build.make CMakeFiles/flexon.dir/flexon_modules/componentbase/flexonGlobal.cpp.i
+.PHONY : flexon_modules/componentbase/flexonGlobal.cpp.i
 
-include/flexon/View.s: include/flexon/View.cpp.s
-.PHONY : include/flexon/View.s
-
-# target to generate assembly for a file
-include/flexon/View.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/flexon.dir/build.make CMakeFiles/flexon.dir/include/flexon/View.cpp.s
-.PHONY : include/flexon/View.cpp.s
-
-include/flexon/composable.o: include/flexon/composable.cpp.o
-.PHONY : include/flexon/composable.o
-
-# target to build an object file
-include/flexon/composable.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/flexon.dir/build.make CMakeFiles/flexon.dir/include/flexon/composable.cpp.o
-.PHONY : include/flexon/composable.cpp.o
-
-include/flexon/composable.i: include/flexon/composable.cpp.i
-.PHONY : include/flexon/composable.i
-
-# target to preprocess a source file
-include/flexon/composable.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/flexon.dir/build.make CMakeFiles/flexon.dir/include/flexon/composable.cpp.i
-.PHONY : include/flexon/composable.cpp.i
-
-include/flexon/composable.s: include/flexon/composable.cpp.s
-.PHONY : include/flexon/composable.s
+flexon_modules/componentbase/flexonGlobal.s: flexon_modules/componentbase/flexonGlobal.cpp.s
+.PHONY : flexon_modules/componentbase/flexonGlobal.s
 
 # target to generate assembly for a file
-include/flexon/composable.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/flexon.dir/build.make CMakeFiles/flexon.dir/include/flexon/composable.cpp.s
-.PHONY : include/flexon/composable.cpp.s
-
-renderer/GUI/flexonGuiRenderer.o: renderer/GUI/flexonGuiRenderer.cpp.o
-.PHONY : renderer/GUI/flexonGuiRenderer.o
-
-# target to build an object file
-renderer/GUI/flexonGuiRenderer.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/flexon.dir/build.make CMakeFiles/flexon.dir/renderer/GUI/flexonGuiRenderer.cpp.o
-.PHONY : renderer/GUI/flexonGuiRenderer.cpp.o
-
-renderer/GUI/flexonGuiRenderer.i: renderer/GUI/flexonGuiRenderer.cpp.i
-.PHONY : renderer/GUI/flexonGuiRenderer.i
-
-# target to preprocess a source file
-renderer/GUI/flexonGuiRenderer.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/flexon.dir/build.make CMakeFiles/flexon.dir/renderer/GUI/flexonGuiRenderer.cpp.i
-.PHONY : renderer/GUI/flexonGuiRenderer.cpp.i
-
-renderer/GUI/flexonGuiRenderer.s: renderer/GUI/flexonGuiRenderer.cpp.s
-.PHONY : renderer/GUI/flexonGuiRenderer.s
-
-# target to generate assembly for a file
-renderer/GUI/flexonGuiRenderer.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/flexon.dir/build.make CMakeFiles/flexon.dir/renderer/GUI/flexonGuiRenderer.cpp.s
-.PHONY : renderer/GUI/flexonGuiRenderer.cpp.s
+flexon_modules/componentbase/flexonGlobal.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/flexon.dir/build.make CMakeFiles/flexon.dir/flexon_modules/componentbase/flexonGlobal.cpp.s
+.PHONY : flexon_modules/componentbase/flexonGlobal.cpp.s
 
 src/main.o: src/main.cpp.o
 .PHONY : src/main.o
@@ -258,18 +186,9 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... flexon"
-	@echo "... include/flexon.o"
-	@echo "... include/flexon.i"
-	@echo "... include/flexon.s"
-	@echo "... include/flexon/View.o"
-	@echo "... include/flexon/View.i"
-	@echo "... include/flexon/View.s"
-	@echo "... include/flexon/composable.o"
-	@echo "... include/flexon/composable.i"
-	@echo "... include/flexon/composable.s"
-	@echo "... renderer/GUI/flexonGuiRenderer.o"
-	@echo "... renderer/GUI/flexonGuiRenderer.i"
-	@echo "... renderer/GUI/flexonGuiRenderer.s"
+	@echo "... flexon_modules/componentbase/flexonGlobal.o"
+	@echo "... flexon_modules/componentbase/flexonGlobal.i"
+	@echo "... flexon_modules/componentbase/flexonGlobal.s"
 	@echo "... src/main.o"
 	@echo "... src/main.i"
 	@echo "... src/main.s"

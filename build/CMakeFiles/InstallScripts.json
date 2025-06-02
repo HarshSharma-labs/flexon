@@ -1,7 +1,7 @@
 {
 	"InstallScripts" : 
 	[
-		"/home/harsh/Desktop/cpp/flexon/build/cmake_install.cmake"
+		"/home/harsh/flexon/build/cmake_install.cmake"
 	],
 	"Parallel" : false
 }

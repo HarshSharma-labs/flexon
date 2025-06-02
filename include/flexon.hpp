@@ -22,6 +22,7 @@ private:
                              .windowHeight = 500,
                              .windowWidth = 500};
   GLFWwindow *flexonContextGui = {nullptr};
+  SHADER::viewShaderProgram fragShader;
 };
 
 #endif

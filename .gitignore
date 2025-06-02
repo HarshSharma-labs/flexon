@@ -1,0 +1,5 @@
+./build
+./renderer
+./CMakeFiles
+./compile_command.json
+./backup

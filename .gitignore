@@ -1,7 +1,7 @@
-build
-renderer
-CMakeFiles
+/build
+/renderer
+/CMakeFiles
 compile_command.json
 backup
 .cache
-generated
+/generated

@@ -1,7 +1,7 @@
-./build
-./renderer
-./CMakeFiles
-./compile_command.json
-./backup
-./.cache
-./generated
+build
+renderer
+CMakeFiles
+compile_command.json
+backup
+.cache
+generated

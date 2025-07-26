@@ -4,7 +4,7 @@
 # compile CXX with /usr/bin/c++
 CXX_DEFINES = 
 
-CXX_INCLUDES = -I"/home/harsh/flexon/flexon_modules/*.hpp" -I"/home/harsh/flexon/flexon_modules/components/*.hpp" -I"/home/harsh/flexon/flexon_modules/componentbase/*.hpp" -I/usr/include/libxml2
+CXX_INCLUDES = -I"/home/harsh/flexon/flexon_modules/*.hpp" -I"/home/harsh/flexon/flexon_modules/components/*.hpp" -I"/home/harsh/flexon/flexon_modules/componentbase/*.hpp" -I"/home/harsh/flexon/flexon_modules/subsystem/*.hpp" -I"/home/harsh/flexon/flexon_modules/utilities/*.hpp" -I/usr/include/libxml2
 
 CXX_FLAGS = -g
 

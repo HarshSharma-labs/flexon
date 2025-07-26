@@ -86,10 +86,66 @@ CMakeFiles/flexon.dir/flexon_modules/componentbase/flexonGlobal.cpp.s: cmake_for
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/flexon.dir/flexon_modules/componentbase/flexonGlobal.cpp.s"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/harsh/flexon/flexon_modules/componentbase/flexonGlobal.cpp -o CMakeFiles/flexon.dir/flexon_modules/componentbase/flexonGlobal.cpp.s
 
+CMakeFiles/flexon.dir/flexon_modules/subsystem/layoutManager.cpp.o: CMakeFiles/flexon.dir/flags.make
+CMakeFiles/flexon.dir/flexon_modules/subsystem/layoutManager.cpp.o: /home/harsh/flexon/flexon_modules/subsystem/layoutManager.cpp
+CMakeFiles/flexon.dir/flexon_modules/subsystem/layoutManager.cpp.o: CMakeFiles/flexon.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/harsh/flexon/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/flexon.dir/flexon_modules/subsystem/layoutManager.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/flexon.dir/flexon_modules/subsystem/layoutManager.cpp.o -MF CMakeFiles/flexon.dir/flexon_modules/subsystem/layoutManager.cpp.o.d -o CMakeFiles/flexon.dir/flexon_modules/subsystem/layoutManager.cpp.o -c /home/harsh/flexon/flexon_modules/subsystem/layoutManager.cpp
+
+CMakeFiles/flexon.dir/flexon_modules/subsystem/layoutManager.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/flexon.dir/flexon_modules/subsystem/layoutManager.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/harsh/flexon/flexon_modules/subsystem/layoutManager.cpp > CMakeFiles/flexon.dir/flexon_modules/subsystem/layoutManager.cpp.i
+
+CMakeFiles/flexon.dir/flexon_modules/subsystem/layoutManager.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/flexon.dir/flexon_modules/subsystem/layoutManager.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/harsh/flexon/flexon_modules/subsystem/layoutManager.cpp -o CMakeFiles/flexon.dir/flexon_modules/subsystem/layoutManager.cpp.s
+
+CMakeFiles/flexon.dir/flexon_modules/subsystem/windowManager.cpp.o: CMakeFiles/flexon.dir/flags.make
+CMakeFiles/flexon.dir/flexon_modules/subsystem/windowManager.cpp.o: /home/harsh/flexon/flexon_modules/subsystem/windowManager.cpp
+CMakeFiles/flexon.dir/flexon_modules/subsystem/windowManager.cpp.o: CMakeFiles/flexon.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/harsh/flexon/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/flexon.dir/flexon_modules/subsystem/windowManager.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/flexon.dir/flexon_modules/subsystem/windowManager.cpp.o -MF CMakeFiles/flexon.dir/flexon_modules/subsystem/windowManager.cpp.o.d -o CMakeFiles/flexon.dir/flexon_modules/subsystem/windowManager.cpp.o -c /home/harsh/flexon/flexon_modules/subsystem/windowManager.cpp
+
+CMakeFiles/flexon.dir/flexon_modules/subsystem/windowManager.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/flexon.dir/flexon_modules/subsystem/windowManager.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/harsh/flexon/flexon_modules/subsystem/windowManager.cpp > CMakeFiles/flexon.dir/flexon_modules/subsystem/windowManager.cpp.i
+
+CMakeFiles/flexon.dir/flexon_modules/subsystem/windowManager.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/flexon.dir/flexon_modules/subsystem/windowManager.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/harsh/flexon/flexon_modules/subsystem/windowManager.cpp -o CMakeFiles/flexon.dir/flexon_modules/subsystem/windowManager.cpp.s
+
+CMakeFiles/flexon.dir/flexon_modules/utilities/string.cpp.o: CMakeFiles/flexon.dir/flags.make
+CMakeFiles/flexon.dir/flexon_modules/utilities/string.cpp.o: /home/harsh/flexon/flexon_modules/utilities/string.cpp
+CMakeFiles/flexon.dir/flexon_modules/utilities/string.cpp.o: CMakeFiles/flexon.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/harsh/flexon/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/flexon.dir/flexon_modules/utilities/string.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/flexon.dir/flexon_modules/utilities/string.cpp.o -MF CMakeFiles/flexon.dir/flexon_modules/utilities/string.cpp.o.d -o CMakeFiles/flexon.dir/flexon_modules/utilities/string.cpp.o -c /home/harsh/flexon/flexon_modules/utilities/string.cpp
+
+CMakeFiles/flexon.dir/flexon_modules/utilities/string.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/flexon.dir/flexon_modules/utilities/string.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/harsh/flexon/flexon_modules/utilities/string.cpp > CMakeFiles/flexon.dir/flexon_modules/utilities/string.cpp.i
+
+CMakeFiles/flexon.dir/flexon_modules/utilities/string.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/flexon.dir/flexon_modules/utilities/string.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/harsh/flexon/flexon_modules/utilities/string.cpp -o CMakeFiles/flexon.dir/flexon_modules/utilities/string.cpp.s
+
+CMakeFiles/flexon.dir/flexon_modules/utilities/units.cpp.o: CMakeFiles/flexon.dir/flags.make
+CMakeFiles/flexon.dir/flexon_modules/utilities/units.cpp.o: /home/harsh/flexon/flexon_modules/utilities/units.cpp
+CMakeFiles/flexon.dir/flexon_modules/utilities/units.cpp.o: CMakeFiles/flexon.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/harsh/flexon/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/flexon.dir/flexon_modules/utilities/units.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/flexon.dir/flexon_modules/utilities/units.cpp.o -MF CMakeFiles/flexon.dir/flexon_modules/utilities/units.cpp.o.d -o CMakeFiles/flexon.dir/flexon_modules/utilities/units.cpp.o -c /home/harsh/flexon/flexon_modules/utilities/units.cpp
+
+CMakeFiles/flexon.dir/flexon_modules/utilities/units.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/flexon.dir/flexon_modules/utilities/units.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/harsh/flexon/flexon_modules/utilities/units.cpp > CMakeFiles/flexon.dir/flexon_modules/utilities/units.cpp.i
+
+CMakeFiles/flexon.dir/flexon_modules/utilities/units.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/flexon.dir/flexon_modules/utilities/units.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/harsh/flexon/flexon_modules/utilities/units.cpp -o CMakeFiles/flexon.dir/flexon_modules/utilities/units.cpp.s
+
 CMakeFiles/flexon.dir/src/main.cpp.o: CMakeFiles/flexon.dir/flags.make
 CMakeFiles/flexon.dir/src/main.cpp.o: /home/harsh/flexon/src/main.cpp
 CMakeFiles/flexon.dir/src/main.cpp.o: CMakeFiles/flexon.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/harsh/flexon/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/flexon.dir/src/main.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/harsh/flexon/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/flexon.dir/src/main.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/flexon.dir/src/main.cpp.o -MF CMakeFiles/flexon.dir/src/main.cpp.o.d -o CMakeFiles/flexon.dir/src/main.cpp.o -c /home/harsh/flexon/src/main.cpp
 
 CMakeFiles/flexon.dir/src/main.cpp.i: cmake_force
@@ -103,12 +159,20 @@ CMakeFiles/flexon.dir/src/main.cpp.s: cmake_force
 # Object files for target flexon
 flexon_OBJECTS = \
 "CMakeFiles/flexon.dir/flexon_modules/componentbase/flexonGlobal.cpp.o" \
+"CMakeFiles/flexon.dir/flexon_modules/subsystem/layoutManager.cpp.o" \
+"CMakeFiles/flexon.dir/flexon_modules/subsystem/windowManager.cpp.o" \
+"CMakeFiles/flexon.dir/flexon_modules/utilities/string.cpp.o" \
+"CMakeFiles/flexon.dir/flexon_modules/utilities/units.cpp.o" \
 "CMakeFiles/flexon.dir/src/main.cpp.o"
 
 # External object files for target flexon
 flexon_EXTERNAL_OBJECTS =
 
 flexon: CMakeFiles/flexon.dir/flexon_modules/componentbase/flexonGlobal.cpp.o
+flexon: CMakeFiles/flexon.dir/flexon_modules/subsystem/layoutManager.cpp.o
+flexon: CMakeFiles/flexon.dir/flexon_modules/subsystem/windowManager.cpp.o
+flexon: CMakeFiles/flexon.dir/flexon_modules/utilities/string.cpp.o
+flexon: CMakeFiles/flexon.dir/flexon_modules/utilities/units.cpp.o
 flexon: CMakeFiles/flexon.dir/src/main.cpp.o
 flexon: CMakeFiles/flexon.dir/build.make
 flexon: CMakeFiles/flexon.dir/compiler_depend.ts
@@ -118,7 +182,7 @@ flexon: /usr/lib/libxml2.so
 flexon: /usr/lib/libcurses.so
 flexon: /usr/lib/libform.so
 flexon: CMakeFiles/flexon.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/harsh/flexon/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Linking CXX executable flexon"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/harsh/flexon/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Linking CXX executable flexon"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/flexon.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.

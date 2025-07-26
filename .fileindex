@@ -1,0 +1,16 @@
+./flexon_modules/subsystem/layoutManager.cpp
+./flexon_modules/subsystem/flexonSubsystems.hpp
+./flexon_modules/subsystem/windowManager.cpp
+./flexon_modules/componentbase/flexonGlobal.hpp
+./flexon_modules/componentbase/flexonGlobal.cpp
+./flexon_modules/componentbase/component.hpp
+./flexon_modules/flexon.hpp
+./flexon_modules/utilities/string.cpp
+./flexon_modules/components/ScrollView.hpp
+./flexon_modules/components/View.hpp
+./flexon_modules/components/Decorator.hpp
+./flexon_modules/components/List.hpp
+./flexon_modules/components/Model.hpp
+./flexon_modules/components/FlatList.hpp
+./flexon_modules/components/Button.hpp
+./src/main.cpp

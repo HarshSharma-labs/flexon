@@ -85,12 +85,12 @@ clean: CMakeFiles/flexon.dir/clean
 CMakeFiles/flexon.dir/all:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/flexon.dir/build.make CMakeFiles/flexon.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/flexon.dir/build.make CMakeFiles/flexon.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/harsh/flexon/build/CMakeFiles --progress-num=1,2,3 "Built target flexon"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/harsh/flexon/build/CMakeFiles --progress-num=1,2,3,4,5,6,7 "Built target flexon"
 .PHONY : CMakeFiles/flexon.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/flexon.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/harsh/flexon/build/CMakeFiles 3
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/harsh/flexon/build/CMakeFiles 7
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/flexon.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /home/harsh/flexon/build/CMakeFiles 0
 .PHONY : CMakeFiles/flexon.dir/rule
@@ -102,7 +102,7 @@ flexon: CMakeFiles/flexon.dir/rule
 # codegen rule for target.
 CMakeFiles/flexon.dir/codegen:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/flexon.dir/build.make CMakeFiles/flexon.dir/codegen
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/harsh/flexon/build/CMakeFiles --progress-num=1,2,3 "Finished codegen for target flexon"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/harsh/flexon/build/CMakeFiles --progress-num=1,2,3,4,5,6,7 "Finished codegen for target flexon"
 .PHONY : CMakeFiles/flexon.dir/codegen
 
 # clean rule for target.

@@ -3,33 +3,23 @@
 
 #include "./componentbase/component.hpp"
 #include "./componentbase/flexonGlobal.hpp"
-#include <cstdio>
-#include <iostream>
+#include "./subsystem/flexonSubsystems.hpp"
+#include <type_traits>
 
 typedef struct baseView *capture;
 
 class flexon {
 public:
-  flexon(functionSignatureVoid callchild) {
-    flexonView **passView = &flexonTree.relativeTree.child;
-    globalStitch = passView;
+  template <typename T> flexon(T callchild) {
+    static_assert(std::is_invocable<T>::value,
+                  "flexon(arg): arg must be a lambda function");
+    subsystem::windowManager::startWM();
+    globalStitch = &flexonTree.relativeTree.child;
     callchild();
-    for (flexonView *tmp = flexonTree.relativeTree.child; tmp;
-         tmp = tmp->neighbour)
-      std::cout << "incurred child" << tmp->layout.height << std::endl;
   };
 
 private:
   flexonGuiTree flexonTree;
-};
-
-class flexonModifier {
-public:
-  flexonModifier(capture cap) { modifierView = cap; };
-  void printHello() { std::cout << "HEllOWorld" << std::endl; }
-
-private:
-  flexonView *modifierView{nullptr};
 };
 
 #endif

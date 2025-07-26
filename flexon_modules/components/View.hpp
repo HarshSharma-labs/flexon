@@ -2,23 +2,21 @@
 #define __FLEXON_VIEW_HPP
 #include "../componentbase/component.hpp"
 #include "../componentbase/flexonGlobal.hpp"
+#include "./Decorator.hpp"
+
 class View {
 public:
-  View(functionSignatureVoid __call) {
+  template <typename funcSig> View(funcSig __call) {
     knot();
     __call();
     globalStitch = &(**attachto).neighbour;
   };
-  View(functionSignature __call) {
-    knot();
-    __call(*attachto);
-    globalStitch = &(**attachto).neighbour;
-  }
 
 private:
   flexonView **attachto = globalStitch;
   void knot() {
     (*attachto) = new flexonView;
+    Modifier.mount(*attachto);
     globalStitch = &(**attachto).child;
   };
 };

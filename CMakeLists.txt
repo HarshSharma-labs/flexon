@@ -22,6 +22,8 @@ include_directories(
     "${PROJECT_SOURCE_DIR}/flexon_modules/*.hpp" 
     "${PROJECT_SOURCE_DIR}/flexon_modules/components/*.hpp" 
     "${PROJECT_SOURCE_DIR}/flexon_modules/componentbase/*.hpp" 
+    "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/*.hpp" 
+    "${PROJECT_SOURCE_DIR}/flexon_modules/utilities/*.hpp" 
 
      ${LIBXML2_INCLUDE_DIR}
      ${CURSES_INCLUDE_DIR}
@@ -32,6 +34,8 @@ include_directories(
 file(GLOB SRCS_FILES 
       "${PROJECT_SOURCE_DIR}/src/*.cpp"
       "${PROJECT_SOURCE_DIR}/flexon_modules/componentbase/*.cpp"
+      "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/*.cpp"
+      "${PROJECT_SOURCE_DIR}/flexon_modules/utilities/*.cpp" 
 
 )
 

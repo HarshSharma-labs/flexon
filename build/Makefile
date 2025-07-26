@@ -153,6 +153,102 @@ flexon_modules/componentbase/flexonGlobal.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/flexon.dir/build.make CMakeFiles/flexon.dir/flexon_modules/componentbase/flexonGlobal.cpp.s
 .PHONY : flexon_modules/componentbase/flexonGlobal.cpp.s
 
+flexon_modules/subsystem/layoutManager.o: flexon_modules/subsystem/layoutManager.cpp.o
+.PHONY : flexon_modules/subsystem/layoutManager.o
+
+# target to build an object file
+flexon_modules/subsystem/layoutManager.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/flexon.dir/build.make CMakeFiles/flexon.dir/flexon_modules/subsystem/layoutManager.cpp.o
+.PHONY : flexon_modules/subsystem/layoutManager.cpp.o
+
+flexon_modules/subsystem/layoutManager.i: flexon_modules/subsystem/layoutManager.cpp.i
+.PHONY : flexon_modules/subsystem/layoutManager.i
+
+# target to preprocess a source file
+flexon_modules/subsystem/layoutManager.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/flexon.dir/build.make CMakeFiles/flexon.dir/flexon_modules/subsystem/layoutManager.cpp.i
+.PHONY : flexon_modules/subsystem/layoutManager.cpp.i
+
+flexon_modules/subsystem/layoutManager.s: flexon_modules/subsystem/layoutManager.cpp.s
+.PHONY : flexon_modules/subsystem/layoutManager.s
+
+# target to generate assembly for a file
+flexon_modules/subsystem/layoutManager.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/flexon.dir/build.make CMakeFiles/flexon.dir/flexon_modules/subsystem/layoutManager.cpp.s
+.PHONY : flexon_modules/subsystem/layoutManager.cpp.s
+
+flexon_modules/subsystem/windowManager.o: flexon_modules/subsystem/windowManager.cpp.o
+.PHONY : flexon_modules/subsystem/windowManager.o
+
+# target to build an object file
+flexon_modules/subsystem/windowManager.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/flexon.dir/build.make CMakeFiles/flexon.dir/flexon_modules/subsystem/windowManager.cpp.o
+.PHONY : flexon_modules/subsystem/windowManager.cpp.o
+
+flexon_modules/subsystem/windowManager.i: flexon_modules/subsystem/windowManager.cpp.i
+.PHONY : flexon_modules/subsystem/windowManager.i
+
+# target to preprocess a source file
+flexon_modules/subsystem/windowManager.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/flexon.dir/build.make CMakeFiles/flexon.dir/flexon_modules/subsystem/windowManager.cpp.i
+.PHONY : flexon_modules/subsystem/windowManager.cpp.i
+
+flexon_modules/subsystem/windowManager.s: flexon_modules/subsystem/windowManager.cpp.s
+.PHONY : flexon_modules/subsystem/windowManager.s
+
+# target to generate assembly for a file
+flexon_modules/subsystem/windowManager.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/flexon.dir/build.make CMakeFiles/flexon.dir/flexon_modules/subsystem/windowManager.cpp.s
+.PHONY : flexon_modules/subsystem/windowManager.cpp.s
+
+flexon_modules/utilities/string.o: flexon_modules/utilities/string.cpp.o
+.PHONY : flexon_modules/utilities/string.o
+
+# target to build an object file
+flexon_modules/utilities/string.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/flexon.dir/build.make CMakeFiles/flexon.dir/flexon_modules/utilities/string.cpp.o
+.PHONY : flexon_modules/utilities/string.cpp.o
+
+flexon_modules/utilities/string.i: flexon_modules/utilities/string.cpp.i
+.PHONY : flexon_modules/utilities/string.i
+
+# target to preprocess a source file
+flexon_modules/utilities/string.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/flexon.dir/build.make CMakeFiles/flexon.dir/flexon_modules/utilities/string.cpp.i
+.PHONY : flexon_modules/utilities/string.cpp.i
+
+flexon_modules/utilities/string.s: flexon_modules/utilities/string.cpp.s
+.PHONY : flexon_modules/utilities/string.s
+
+# target to generate assembly for a file
+flexon_modules/utilities/string.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/flexon.dir/build.make CMakeFiles/flexon.dir/flexon_modules/utilities/string.cpp.s
+.PHONY : flexon_modules/utilities/string.cpp.s
+
+flexon_modules/utilities/units.o: flexon_modules/utilities/units.cpp.o
+.PHONY : flexon_modules/utilities/units.o
+
+# target to build an object file
+flexon_modules/utilities/units.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/flexon.dir/build.make CMakeFiles/flexon.dir/flexon_modules/utilities/units.cpp.o
+.PHONY : flexon_modules/utilities/units.cpp.o
+
+flexon_modules/utilities/units.i: flexon_modules/utilities/units.cpp.i
+.PHONY : flexon_modules/utilities/units.i
+
+# target to preprocess a source file
+flexon_modules/utilities/units.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/flexon.dir/build.make CMakeFiles/flexon.dir/flexon_modules/utilities/units.cpp.i
+.PHONY : flexon_modules/utilities/units.cpp.i
+
+flexon_modules/utilities/units.s: flexon_modules/utilities/units.cpp.s
+.PHONY : flexon_modules/utilities/units.s
+
+# target to generate assembly for a file
+flexon_modules/utilities/units.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/flexon.dir/build.make CMakeFiles/flexon.dir/flexon_modules/utilities/units.cpp.s
+.PHONY : flexon_modules/utilities/units.cpp.s
+
 src/main.o: src/main.cpp.o
 .PHONY : src/main.o
 
@@ -189,6 +285,18 @@ help:
 	@echo "... flexon_modules/componentbase/flexonGlobal.o"
 	@echo "... flexon_modules/componentbase/flexonGlobal.i"
 	@echo "... flexon_modules/componentbase/flexonGlobal.s"
+	@echo "... flexon_modules/subsystem/layoutManager.o"
+	@echo "... flexon_modules/subsystem/layoutManager.i"
+	@echo "... flexon_modules/subsystem/layoutManager.s"
+	@echo "... flexon_modules/subsystem/windowManager.o"
+	@echo "... flexon_modules/subsystem/windowManager.i"
+	@echo "... flexon_modules/subsystem/windowManager.s"
+	@echo "... flexon_modules/utilities/string.o"
+	@echo "... flexon_modules/utilities/string.i"
+	@echo "... flexon_modules/utilities/string.s"
+	@echo "... flexon_modules/utilities/units.o"
+	@echo "... flexon_modules/utilities/units.i"
+	@echo "... flexon_modules/utilities/units.s"
 	@echo "... src/main.o"
 	@echo "... src/main.i"
 	@echo "... src/main.s"

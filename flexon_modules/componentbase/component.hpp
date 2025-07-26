@@ -1,30 +1,24 @@
 #ifndef __FLEXON_COMPONENT_BUILDER__
 #define __FLEXON_COMPONENT_BUILDER__
 
-#include <functional>
+#include "../utilities/defs.hpp"
+#include <cstdint>
 
 typedef void (*press)();
 
+// defination to access color value
 typedef struct {
-  float r;
-  float g;
-  float b;
-  float a;
+  uint8_t r;
+  uint8_t g;
+  uint8_t b;
+  uint8_t a;
 } colornc;
-
-typedef struct {
-  colornc top;
-  colornc bottom;
-  colornc left;
-  colornc right;
-} colorncx;
 
 typedef struct {
   float top;
   float bottom;
   float left;
   float right;
-  float overall;
 } uniparam;
 
 typedef struct {
@@ -33,29 +27,39 @@ typedef struct {
   float flex;
   float gap;
   int overflow;
-  int alignItems;
-  int justifyContent;
 } lay;
 
-struct baseView {
-  lay layout;
+typedef struct {
+} onEvent;
+typedef struct {
+  uint32_t *backgroundColor;
+  uint32_t *borderColor;
+  uint8_t bgColorCount;
+  uint8_t borderColorCount;
+} __color;
+
+typedef struct {
   uniparam margin;
   uniparam padding;
   uniparam Border;
-  colorncx borderColor;
-  colorncx backgroundColor;
+  __color color;
+  enum alignTypes alignitems;
+  enum justifyTypes justifyItems;
+  enum positionTypes position;
+} decorator;
+
+struct baseView {
+  lay layout;
+  decorator style;
   baseView *parent{nullptr};
   baseView *child{nullptr};
   baseView *neighbour{nullptr};
-  press onPress{nullptr};
-  press onLongPress{nullptr};
 };
+
 typedef struct {
   struct baseView relativeTree;
   struct baseView absoluteTree;
 } flexonGuiTree;
 typedef struct baseView flexonView;
-typedef std::function<void(flexonView *)> functionSignature;
-typedef std::function<void(void)> functionSignatureVoid;
 
 #endif // !__FLEXON_COMPONENT_BUILDER__

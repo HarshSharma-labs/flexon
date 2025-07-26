@@ -3,6 +3,10 @@ flexon: \
   /usr/lib/gcc/x86_64-pc-linux-gnu/15.1.1/../../../../lib/crti.o \
   /usr/lib/gcc/x86_64-pc-linux-gnu/15.1.1/crtbeginS.o \
   CMakeFiles/flexon.dir/flexon_modules/componentbase/flexonGlobal.cpp.o \
+  CMakeFiles/flexon.dir/flexon_modules/subsystem/layoutManager.cpp.o \
+  CMakeFiles/flexon.dir/flexon_modules/subsystem/windowManager.cpp.o \
+  CMakeFiles/flexon.dir/flexon_modules/utilities/string.cpp.o \
+  CMakeFiles/flexon.dir/flexon_modules/utilities/units.cpp.o \
   CMakeFiles/flexon.dir/src/main.cpp.o \
   /usr/lib/libGL.so \
   /usr/lib/libGLU.so \
@@ -62,6 +66,14 @@ flexon: \
 /usr/lib/gcc/x86_64-pc-linux-gnu/15.1.1/crtbeginS.o:
 
 CMakeFiles/flexon.dir/flexon_modules/componentbase/flexonGlobal.cpp.o:
+
+CMakeFiles/flexon.dir/flexon_modules/subsystem/layoutManager.cpp.o:
+
+CMakeFiles/flexon.dir/flexon_modules/subsystem/windowManager.cpp.o:
+
+CMakeFiles/flexon.dir/flexon_modules/utilities/string.cpp.o:
+
+CMakeFiles/flexon.dir/flexon_modules/utilities/units.cpp.o:
 
 CMakeFiles/flexon.dir/src/main.cpp.o:
 

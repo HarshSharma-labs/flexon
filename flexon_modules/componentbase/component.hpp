@@ -3,6 +3,7 @@
 
 #include "../utilities/defs.hpp"
 #include <cstdint>
+#include <endian.h>
 
 typedef void (*press)();
 
@@ -19,47 +20,63 @@ typedef struct {
   float bottom;
   float left;
   float right;
-} uniparam;
+} uni_param;
 
 typedef struct {
   float height;
   float width;
   float flex;
-  float gap;
-  int overflow;
+  uni_param margin;
+  uni_param padding;
+  uni_param Border;
+  enum unit_types height_unit;
+  enum unit_types width_unit;
 } lay;
 
 typedef struct {
 } onEvent;
-typedef struct {
-  uint32_t *backgroundColor;
-  uint32_t *borderColor;
-  uint8_t bgColorCount;
-  uint8_t borderColorCount;
-} __color;
 
-typedef struct {
-  uniparam margin;
-  uniparam padding;
-  uniparam Border;
-  __color color;
-  enum alignTypes alignitems;
-  enum justifyTypes justifyItems;
-  enum positionTypes position;
-} decorator;
+struct color_tree {
+  colornc color;
+  struct color_tree *next;
+};
 
-struct baseView {
-  lay layout;
-  decorator style;
-  baseView *parent{nullptr};
-  baseView *child{nullptr};
-  baseView *neighbour{nullptr};
+struct border_color {
+  colornc top;
+  colornc bottom;
+  colornc left;
+  colornc right;
 };
 
 typedef struct {
-  struct baseView relativeTree;
-  struct baseView absoluteTree;
-} flexonGuiTree;
-typedef struct baseView flexonView;
+  colornc color;
+  colornc bgColor;
+  border_color border;
+  enum color_fill_type bg_fill_type;
+  enum color_fill_type color_type;
+  enum color_fill_type border_fill_type;
+} view_color_options;
+
+typedef struct {
+  view_color_options color;
+  enum align_types alignitems;
+  enum justify_types justifyItems;
+  enum position_types position;
+  enum over_flow_types overflow;
+} decorator;
+
+struct base_view {
+  lay layout;
+  decorator style;
+  base_view *parent{nullptr};
+  base_view *child{nullptr};
+  base_view *neighbour{nullptr};
+};
+
+typedef struct {
+  struct base_view relative_tree;
+  struct base_view absolute_tree;
+} flexon_gui_tree;
+typedef struct base_view flexon_view;
 
 #endif // !__FLEXON_COMPONENT_BUILDER__

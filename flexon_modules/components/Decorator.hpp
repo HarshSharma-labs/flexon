@@ -11,19 +11,12 @@
 
 template <typename refType> class modifier {
 public:
-  modifier() {
-    int i = 1;
-    if (*(char *)&i) {
-      little_endian_system = true;
-    }
-  };
-
-  void mount(flexonView *_point) {
-    mountp = _point;
-    modifierStyle = &(*_point).style;
-    modifierlay = &(*_point).layout;
-    modifierStyle->borderColorCount = 0;
-    modifierStyle->bgColorCount = 0;
+  void mount(flexon_view *point) {
+    mountp = point;
+    modifierStyle = &(*point).style;
+    modifierlay = &(*point).layout;
+    memset(modifierlay, 0, sizeof(lay));
+    memset(modifierStyle, 0, sizeof(decorator));
     return;
   }; // { mountp = _point; }
 
@@ -59,43 +52,69 @@ public:
 
   modifier &Color(const char *type, variadicColor... args) {
 
-    return *this;
     static_assert(std::conjunction_v<std::is_same<refType, variadicColor>...>);
-    const std::size_t argsSize = sizeof...(args);
-    std::size_t getArg = 0;
+    const size_t args_size = sizeof...(args);
+    refType colors[args_size] = {args...};
+    std::size_t arg_count = 0;
     int count = 0;
 
     if (type != nullptr) {
       int count = 0;
       while (count[type] != '\0') {
         if (count[type] == '%') {
+
           count += 1;
+
           switch (count[type]) {
+
           case 'c':
-            // modifierStyle->backgroundColor = new colornc;
-            // modifierStyle->bgColorCount += 1;
+
+            fillhex(&arg_count[colors], &(*modifierStyle).color.color);
+            arg_count += 1;
 
             break;
           case 'b':
+
             count += 1;
             switch (count[type]) {
             case 'g':
-              std::cout << "backgroundColor here" << std::endl;
+              fillhex(&arg_count[colors], &(*modifierStyle).color.bgColor);
+              arg_count += 1;
+
               break;
             case 't':
-              std::cout << "borderTop here" << std::endl;
+
+              fillhex(&arg_count[colors], &(*modifierStyle).color.border.top);
+              arg_count += 1;
+
               break;
             case 'l':
-              std::cout << "borderLeft here" << std::endl;
+
+              fillhex(&arg_count[colors], &(*modifierStyle).color.border.left);
+              arg_count += 1;
+
               break;
             case 'r':
-              std::cout << "borderRight here" << std::endl;
+
+              fillhex(&arg_count[colors], &(*modifierStyle).color.border.right);
+              arg_count += 1;
+
               break;
             case 'b':
-              std::cout << "borderbottom here" << std::endl;
+
+              fillhex(&arg_count[colors],
+                      &(*modifierStyle).color.border.bottom);
+              arg_count += 1;
+
               break;
             default:
-              std::cout << "borderColor here" << std::endl;
+
+              fillhex(&arg_count[colors], &(*modifierStyle).color.border.top);
+              fillhex(&arg_count[colors],
+                      &(*modifierStyle).color.border.bottom);
+              fillhex(&arg_count[colors], &(*modifierStyle).color.border.left);
+              fillhex(&arg_count[colors], &(*modifierStyle).color.border.right);
+              arg_count += 1;
               count -= 1;
               break;
             }
@@ -139,20 +158,29 @@ public:
     static_assert(std::conjunction_v<std::is_same<float, variadicSpace>...>,
                   "space function only support floating type use units utility "
                   "to pass arguements to modifier");
-    size_t spaceCount = sizeof...(variadicSpace);
-    int floatCount = 0;
+    const size_t arg_size = sizeof...(variadicSpace);
+    float spaces_value[arg_size] = {arg...};
+    size_t arg_count = 0;
 
     if (type != nullptr) {
-      int count = 0;
-      uniparam *spaceContext = nullptr;
+      size_t count = 0;
+      uni_param *spaceContext = nullptr;
+
       while (count[type] != '\0') {
         if (count[type] == '%') {
           count += 1;
           switch (count[type]) {
           case 'm':
-
+            count += 1;
+            std::cout << spaces_value[0] << std::endl;
+            fill_uni_param(&(*modifierlay).margin, &count[type], &count,
+                           &arg_count, &spaces_value[0]);
             break;
           case 'p':
+            count += 1;
+            fill_uni_param(&(*modifierlay).padding, &count[type], &count,
+                           &arg_count, &spaces_value[0]);
+
             break;
           default:
             count -= 1;
@@ -361,35 +389,76 @@ public:
 
   modifier &onEvent(const char *type, ...);
 
-#ifdef FLEXON_ENABLE_STATIC_LAYOUT
-  modifier &setDimensions(float hight, float width) {
-    (*modifierlay).height = heigth;
+  modifier &Dimensions(float height, float width) {
+    (*modifierlay).height = height;
+    (*modifierlay).width = width;
+    return *this;
+  }
+  modifier &Width(float width) {
     (*modifierlay).width = width;
     return *this;
   };
-  modifier &fillMaxSize();
+  modifier &Height(float height) {
+    (*modifierlay).height = height;
+    return *this;
+  }
 
-#endif // FLEXON_ENABLE_STATIC_LAYOUT
-#ifdef FLEXON_ENABLE_FLEX_LAYOUT
+  // modifier &fillMaxSize();
   modifier &setFlex(float flex) {
     (*modifierlay).flex = flex;
+    (*modifierlay).height_unit = UNIT_FLEX; // height unit is given pritority
     return *this;
   };
-#endif
-
-#ifdef FLEXON_ENABLE_SEMIDYNAMIC_LAYOUT
-  modifier &rem(float value);
-  modifier &vh(float value);
-  modifier &vw(float value);
-  modifier &rel(float value);
-#endif //
 
 private:
-  flexonView *mountp = {nullptr};
+  flexon_view *mountp = {nullptr};
   decorator *modifierStyle;
   lay *modifierlay;
+  //  __color **bgRef = nullptr;
+  //__color **colorRef = nullptr;
+  // __color **borderColorRef = nullptr;
 
-  bool little_endian_system{false};
+  void fillhex(uint32_t *arg, colornc *color_ref) {
+    color_ref->r = (*arg >> 24) & 0xff;
+    color_ref->g = (*arg >> 16) & 0xff;
+    color_ref->b = (*arg >> 8) & 0xff;
+    color_ref->a = *arg & 0xff;
+  };
+  void fill_uni_param(uni_param *which, const char *next, size_t *count_ref,
+                      size_t *arg_count_ref, float *spaces_value) {
+
+    size_t sub_arg_count = *arg_count_ref;
+
+    switch (*next) {
+    case 't':
+      which->top = sub_arg_count[spaces_value];
+      *arg_count_ref += 1;
+      break;
+    case 'b':
+      which->bottom = sub_arg_count[spaces_value];
+      *arg_count_ref += 1;
+
+      break;
+    case 'l':
+      which->left = sub_arg_count[spaces_value];
+      *arg_count_ref += 1;
+
+      break;
+    case 'r':
+      which->right = sub_arg_count[spaces_value];
+      *arg_count_ref += 1;
+
+      break;
+    default:
+      which->top = sub_arg_count[spaces_value];
+      which->bottom = sub_arg_count[spaces_value];
+      which->right = sub_arg_count[spaces_value];
+      which->left = sub_arg_count[spaces_value];
+      *arg_count_ref += 1;
+      *count_ref -= 1;
+      break;
+    }
+  };
 };
 
 extern modifier<uint32_t> Modifier;

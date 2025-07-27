@@ -3,5 +3,5 @@
 #include "./component.hpp"
 #include <cstdint>
 
-flexonView **globalStitch;
+flexon_view **global_stitch;
 modifier<uint32_t> Modifier;

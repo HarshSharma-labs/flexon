@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<meta charset="utf-8"/>
+<title>class modifier</title>
+<link rel="stylesheet" href="../clang-doc-default-stylesheet.css"/>
+<script src="../index_json.js"></script>
+<script src="../index.js"></script>
+<header id="project-title">flexon</header>
+<main>
+  <div id="sidebar-left" path="GlobalNamespace" class="col-xs-6 col-sm-3 col-md-2 sidebar sidebar-offcanvas-left"></div>
+  <div id="main-content" class="col-xs-12 col-sm-9 col-md-8 main-content">
+    <h1>class modifier</h1>
+    <p>Defined at line 12 of file src/../flexon_modules/components/./Decorator.hpp</p>
+    <h2 id="Members">Members</h2>
+    <ul>
+      <li>
+        <div>private flexonView * mountp</div>
+      </li>
+      <li>
+        <div>private decorator * modifierStyle</div>
+      </li>
+      <li>
+        <div>private lay * modifierlay</div>
+      </li>
+      <li>
+        <div>private bool little_endian_system</div>
+      </li>
+    </ul>
+    <h2 id="Functions">Functions</h2>
+    <div>
+      <h3 id="4D34DA65662B24FE497D293E73B0030008EA2052">modifier&lt;refType&gt;</h3>
+      <p>public void modifier&lt;refType&gt;()</p>
+      <p>Defined at line 14 of file src/../flexon_modules/components/./Decorator.hpp</p>
+      <h3 id="4A4699A9A93A34C70A7F84F717A82EF817FBC949">mount</h3>
+      <p>public void mount(flexonView * _point)</p>
+      <p>Defined at line 21 of file src/../flexon_modules/components/./Decorator.hpp</p>
+      <h3 id="BC853C371357EF22CBE84579FF3D9DDB7BAC6227">Color</h3>
+      <p>public modifier&lt;refType&gt; &amp; Color(const char * type, variadicColor... args)</p>
+      <p>Defined at line 60 of file src/../flexon_modules/components/./Decorator.hpp</p>
+      <div>
+        <div>
+          <p> color function: - format of arg: &quot;key&quot;</p>
+          <p>  type of key :     1) color            : %c     2) border           : %b     3) background       : %bg     4) borderTop        : %bt     5) borderBottom     : %bb     6) borderLeft       : %bl     7) borderRight      : %br  To use gradient use format:      (key):%(l|c|r)g:n     :- Here n = number of color;</p>
+          <p> parameter value can take:    1) hex - 0x000000    2) rgb - 125, 100, 255    3) rgba - 255, 255, 255    4) hexa - 0x000000ff</p>
+          <p>  Usages:   Color(&quot;%b&quot;,0x000000);   Color(&quot;%lg %bg&quot;,0xff0012,0xff033ff);</p>
+        </div>
+      </div>
+      <h3 id="2C0F93CD5759324345AD9E7DDD98C0DAE0DA5FA4">space</h3>
+      <p>public modifier&lt;refType&gt; &amp; space(const char * type, variadicSpace... arg)</p>
+      <p>Defined at line 152 of file src/../flexon_modules/components/./Decorator.hpp</p>
+      <div>
+        <div>
+          <p> space function:  - format of arg:&quot;key:value&quot;</p>
+          <p> type of key:     1) padding         : %p     2) paddingTop      : %pt     3) paddingLeft     : %pl     4) paddingRight    : %pr     5) paddingBottom   : %pb</p>
+          <p>     6) margin          : %m     7) marginTop       : %mt     8) marginLeft      : %ml     9) marginRight     : %mr    10) marginBottom    : %mb</p>
+          <p>    11) gap             : %g</p>
+        </div>
+      </div>
+      <h3 id="5FA96071395E24A2C2D989EB386036685579FD84">setPosition</h3>
+      <p>public modifier&lt;refType&gt; &amp; setPosition(const char * key)</p>
+      <p>Defined at line 191 of file src/../flexon_modules/components/./Decorator.hpp</p>
+      <div>
+        <div>
+          <p> positon function:  - format of args: &quot;key&quot;</p>
+          <p>  type of key:    1) relative          : %r    2) absolute          : %a</p>
+        </div>
+      </div>
+      <h3 id="4E0DEC55144752B922FB139E43F73EA8D05CA9F7">justifyContent</h3>
+      <p>public modifier&lt;refType&gt; &amp; justifyContent(const char * key)</p>
+      <p>Defined at line 232 of file src/../flexon_modules/components/./Decorator.hpp</p>
+      <div>
+        <div>
+          <p>  justifyContent function:   - format of args : &quot;key&quot;</p>
+          <p>   type of key:    1) flex-start       : %fs    2) flex-end         : %fe    3) center           : %c    4) space-between    : %sb    5) space-around     : %sa    6) space-evenly     : %se    7) start            : %s    8) end              : %e</p>
+        </div>
+      </div>
+      <h3 id="8605B9B123A728E105B32EECA429F0681620008C">alignItems</h3>
+      <p>public modifier&lt;refType&gt; &amp; alignItems(const char * key)</p>
+      <p>Defined at line 314 of file src/../flexon_modules/components/./Decorator.hpp</p>
+      <div>
+        <div>
+          <p> alignitems function:  - format of args: &quot;key&quot;</p>
+          <p>  type of key:    1) center           : %c    2) baseline         : %b    3) stretch          : %s    4) flex-start       : %fs    5) flex-end         : %fe</p>
+        </div>
+      </div>
+      <h3 id="E9623957C12420478A74869A69E0CA659DB2CCFF">Dimensions</h3>
+      <p>public modifier&lt;refType&gt; &amp; Dimensions(float height, float width)</p>
+      <p>Defined at line 379 of file src/../flexon_modules/components/./Decorator.hpp</p>
+      <h3 id="FE785DBB551C5F79A38D8DE92846FDCFD3574644">Width</h3>
+      <p>public modifier&lt;refType&gt; &amp; Width(float width)</p>
+      <p>Defined at line 384 of file src/../flexon_modules/components/./Decorator.hpp</p>
+      <h3 id="D9C0EB36B94E4CD41267A669717F34D1FF8F605C">Height</h3>
+      <p>public modifier&lt;refType&gt; &amp; Height(float height)</p>
+      <p>Defined at line 388 of file src/../flexon_modules/components/./Decorator.hpp</p>
+      <h3 id="9EAD5F2D8ABD07D4372A4E8F3747A55075123741">onEvent</h3>
+      <p>public modifier&lt;refType&gt; &amp; onEvent(const char * type)</p>
+      <div>
+        <div>
+          <p> onEvent function:  - format of args : &quot;key&quot;</p>
+          <p>  type of key:    1) onCLick          : %oc    2) onHover          : %oh    3) onScroll         : %os    4) onLayoutChange   : %olc</p>
+        </div>
+      </div>
+      <h3 id="D3DD5AC084F8EE02F96A8F8CC21A187C8BBE670C">setFlex</h3>
+      <p>public modifier&lt;refType&gt; &amp; setFlex(float flex)</p>
+      <p>Defined at line 394 of file src/../flexon_modules/components/./Decorator.hpp</p>
+      <div>
+        <div>
+          <p> modifier &amp;fillMaxSize();</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="sidebar-right" class="col-xs-6 col-sm-6 col-md-2 sidebar sidebar-offcanvas-right">
+    <ol>
+      <li>
+        <span>
+          <a href="#Members">Members</a>
+        </span>
+      </li>
+      <li>
+        <span>
+          <a href="#Functions">Functions</a>
+        </span>
+        <ul>
+          <li>
+            <span>
+              <a href="#4D34DA65662B24FE497D293E73B0030008EA2052">modifier&lt;refType&gt;</a>
+            </span>
+          </li>
+          <li>
+            <span>
+              <a href="#4A4699A9A93A34C70A7F84F717A82EF817FBC949">mount</a>
+            </span>
+          </li>
+          <li>
+            <span>
+              <a href="#BC853C371357EF22CBE84579FF3D9DDB7BAC6227">Color</a>
+            </span>
+          </li>
+          <li>
+            <span>
+              <a href="#2C0F93CD5759324345AD9E7DDD98C0DAE0DA5FA4">space</a>
+            </span>
+          </li>
+          <li>
+            <span>
+              <a href="#5FA96071395E24A2C2D989EB386036685579FD84">setPosition</a>
+            </span>
+          </li>
+          <li>
+            <span>
+              <a href="#4E0DEC55144752B922FB139E43F73EA8D05CA9F7">justifyContent</a>
+            </span>
+          </li>
+          <li>
+            <span>
+              <a href="#8605B9B123A728E105B32EECA429F0681620008C">alignItems</a>
+            </span>
+          </li>
+          <li>
+            <span>
+              <a href="#E9623957C12420478A74869A69E0CA659DB2CCFF">Dimensions</a>
+            </span>
+          </li>
+          <li>
+            <span>
+              <a href="#FE785DBB551C5F79A38D8DE92846FDCFD3574644">Width</a>
+            </span>
+          </li>
+          <li>
+            <span>
+              <a href="#D9C0EB36B94E4CD41267A669717F34D1FF8F605C">Height</a>
+            </span>
+          </li>
+          <li>
+            <span>
+              <a href="#9EAD5F2D8ABD07D4372A4E8F3747A55075123741">onEvent</a>
+            </span>
+          </li>
+          <li>
+            <span>
+              <a href="#D3DD5AC084F8EE02F96A8F8CC21A187C8BBE670C">setFlex</a>
+            </span>
+          </li>
+        </ul>
+      </li>
+    </ol>
+  </div>
+</main>
+<footer>
+  <span class="no-break">clang-doc version 20.1.8</span>
+</footer>

@@ -1,16 +1,18 @@
+#include "../utilities/units.hpp"
 #include "flexonSubsystems.hpp"
 #include <GL/gl.h>
 #include <GLFW/glfw3.h>
 #include <cassert>
 #include <cstdlib>
+#include <iostream>
 
-struct flexonWindowManager {
+struct flexon_window_manager {
   GLFWmonitor *monitor;
   const GLFWvidmode *monitorMode;
   GLFWwindow *window;
 };
 
-struct windowManagerConfig {
+struct window_manager_config {
   int width;
   int height;
   int drawableHeight;
@@ -18,8 +20,9 @@ struct windowManagerConfig {
   float refreshRate;
 };
 
-struct flexonWindowManager localWindowManager;
-struct windowManagerConfig localConfig;
+struct flexon_window_manager local_window_manager;
+struct window_manager_config local_config;
+struct flexon_unit_factor unit_factor;
 
 void subsystem::windowManager::startWM() {
   if (!glfwInit())
@@ -28,32 +31,41 @@ void subsystem::windowManager::startWM() {
   glfwWindowHint(GLFW_DECORATED, GLFW_TRUE);
   glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
 
-  localWindowManager.monitor = glfwGetPrimaryMonitor();
-  localWindowManager.monitorMode = glfwGetVideoMode(localWindowManager.monitor);
-  localConfig.height = localWindowManager.monitorMode->height;
-  localConfig.width = localWindowManager.monitorMode->width;
-  localConfig.refreshRate = localWindowManager.monitorMode->refreshRate;
-
+  local_window_manager.monitor = glfwGetPrimaryMonitor();
+  local_window_manager.monitorMode =
+      glfwGetVideoMode(local_window_manager.monitor);
+  local_config.height = local_window_manager.monitorMode->height;
+  local_config.width = local_window_manager.monitorMode->width;
+  local_config.refreshRate = local_window_manager.monitorMode->refreshRate;
+  unit_factor.remFactor = 16.0f;
   return;
 }
 
 void subsystem::windowManager::showWindow() {
-  localWindowManager.window = glfwCreateWindow(
-      localConfig.width, localConfig.height, "hello flexon", NULL, NULL);
-  glfwGetWindowSize(localWindowManager.window, &localConfig.drawableWidth,
-                    &localConfig.drawableHeight);
+  local_window_manager.window = glfwCreateWindow(
+      local_config.width, local_config.height, "hello flexon", NULL, NULL);
+  glfwGetWindowSize(local_window_manager.window, &local_config.drawableWidth,
+                    &local_config.drawableHeight);
+  unit_factor.vhFactor =
+      static_cast<float>(local_config.drawableHeight) * 0.01f;
+  unit_factor.vwFactor = static_cast<float>(local_config.drawableWidth) * 0.01f;
+  subsystem::layoutManager::mountFactors(&unit_factor);
+  unitMountFactor(&unit_factor);
 
-  glfwMakeContextCurrent(localWindowManager.window);
+  glfwMakeContextCurrent(local_window_manager.window);
+
+  glfwDestroyWindow(local_window_manager.window);
+  glfwTerminate();
   return;
 }
 
 void subsystem::windowManager::startInput() {
-  while (!glfwWindowShouldClose(localWindowManager.window)) {
+  while (!glfwWindowShouldClose(local_window_manager.window)) {
 
     glfwWaitEvents();
   }
 
-  glfwDestroyWindow(localWindowManager.window);
+  glfwDestroyWindow(local_window_manager.window);
   glfwTerminate();
   return;
 }

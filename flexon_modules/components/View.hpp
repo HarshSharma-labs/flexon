@@ -9,15 +9,15 @@ public:
   template <typename funcSig> View(funcSig __call) {
     knot();
     __call();
-    globalStitch = &(**attachto).neighbour;
+    global_stitch = &(**attachto).neighbour;
   };
 
 private:
-  flexonView **attachto = globalStitch;
+  flexon_view **attachto = global_stitch;
   void knot() {
-    (*attachto) = new flexonView;
+    (*attachto) = new flexon_view;
     Modifier.mount(*attachto);
-    globalStitch = &(**attachto).child;
+    global_stitch = &(**attachto).child;
   };
 };
 #endif

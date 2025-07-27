@@ -4,65 +4,271 @@
 <link rel="stylesheet" href="../clang-doc-default-stylesheet.css"/>
 <script src="../index_json.js"></script>
 <script src="../index.js"></script>
-<header id="project-title"></header>
+<header id="project-title">flexon</header>
 <main>
   <div id="sidebar-left" path="GlobalNamespace" class="col-xs-6 col-sm-3 col-md-2 sidebar sidebar-offcanvas-left"></div>
   <div id="main-content" class="col-xs-12 col-sm-9 col-md-8 main-content">
     <h1>Global Namespace</h1>
+    <h2 id="Namespaces">Namespaces</h2>
+    <ul>
+      <li>subsystem</li>
+    </ul>
     <h2 id="Records">Records</h2>
     <ul>
       <li>
-        <a href="layout.html">layout</a>
+        <a href="View.html">View</a>
       </li>
       <li>
-        <a href="flexonView.html">flexonView</a>
+        <a href="__color.html">__color</a>
       </li>
       <li>
-        <a href="tflag.html">tflag</a>
+        <a href="baseView.html">baseView</a>
       </li>
       <li>
-        <a href="flexonViewTui.html">flexonViewTui</a>
+        <a href="colorTree.html">colorTree</a>
       </li>
       <li>
-        <a href="graphics.html">graphics</a>
+        <a href="colornc.html">colornc</a>
       </li>
       <li>
-        <a href="flexonRender.html">flexonRender</a>
+        <a href="decorator.html">decorator</a>
       </li>
       <li>
         <a href="flexon.html">flexon</a>
       </li>
       <li>
-        <a href="Text.html">Text</a>
+        <a href="flexonGuiTree.html">flexonGuiTree</a>
       </li>
       <li>
-        <a href="View.html">View</a>
+        <a href="flexonUnitFactor.html">flexonUnitFactor</a>
+      </li>
+      <li>
+        <a href="flexonWindowManager.html">flexonWindowManager</a>
+      </li>
+      <li>
+        <a href="lay.html">lay</a>
+      </li>
+      <li>
+        <a href="modifier.html">modifier</a>
+      </li>
+      <li>
+        <a href="onEvent.html">onEvent</a>
+      </li>
+      <li>
+        <a href="uniparam.html">uniparam</a>
+      </li>
+      <li>
+        <a href="windowManagerConfig.html">windowManagerConfig</a>
       </li>
     </ul>
     <h2 id="Functions">Functions</h2>
     <div>
-      <h3 id="7A6A8F838373D6F4EE6EBA2B473E475A390855F1">flexon_compose_tree</h3>
-      <p>flexonView * flexon_compose_tree(flexonView *** , std::function&lt;void (mine)&gt; &amp; )</p>
-      <p>Defined at line 3 of file include/flexon/composable.cpp</p>
       <h3 id="3017D418E3EE725968AA296F0D948D0A30779148">main</h3>
       <p>int main()</p>
       <p>Defined at line 9 of file src/main.cpp</p>
-      <h3 id="0DF67C24452348EDC609BEC1DF8964E325FAD279">genCol</h3>
-      <p>float genCol()</p>
-      <p>Defined at line 11 of file renderer/GUI/flexonGuiRenderer.cpp</p>
-      <h3 id="80906A50E134AB1CADE3B2586CBC72ECBC7982C7">key_callback</h3>
-      <p>void key_callback(GLFWwindow * window, int key, int scancode, int action, int mods)</p>
-      <p>Defined at line 16 of file renderer/GUI/flexonGuiRenderer.cpp</p>
-      <h3 id="BD79AD1582E0C571581F1D2F7712D2621E044B89">resize_callback</h3>
-      <p>void resize_callback(GLFWwindow * window, int width, int height)</p>
-      <p>Defined at line 29 of file renderer/GUI/flexonGuiRenderer.cpp</p>
-      <h3 id="4D9B66FD926C098BAE6FB75898157EA068DCEFF5">maximize_callback</h3>
-      <p>void maximize_callback(GLFWwindow * window, int maximized)</p>
-      <p>Defined at line 38 of file renderer/GUI/flexonGuiRenderer.cpp</p>
+      <h3 id="DAF1C8771D5E2B97C711D1BE9C8E5F46A0D970D8">hex</h3>
+      <p>uint32_t hex(int color)</p>
+      <p>Defined at line 11 of file flexon_modules/utilities/units.cpp</p>
+      <h3 id="D025C645E7B2A5A3CCE2D401718494843005AC35">unitMountFactor</h3>
+      <p>void unitMountFactor(struct flexonUnitFactor * )</p>
+      <p>Defined at line 7 of file flexon_modules/utilities/units.cpp</p>
+      <h3 id="B006A975EA6342DFDEC01B0F35EA7A6F691ECF39">rem</h3>
+      <p>float rem(float )</p>
+      <p>Defined at line 17 of file flexon_modules/utilities/units.cpp</p>
+      <h3 id="9699EF709A4B164EA1A9D89E0278762E0C4C915A">vh</h3>
+      <p>float vh(float )</p>
+      <p>Defined at line 19 of file flexon_modules/utilities/units.cpp</p>
+      <h3 id="1231923C4A666854EE6E8544E960F83484E13047">vw</h3>
+      <p>float vw(float )</p>
+      <p>Defined at line 23 of file flexon_modules/utilities/units.cpp</p>
+      <h3 id="FA3F3EC4EF737879972E6BC56D820BFA22E44D96">rel</h3>
+      <p>float rel(float )</p>
+      <h3 id="EC6AAB1E35F0D3AAE20E6284589DEC1F1444C83D">relh</h3>
+      <p>float relh(float value)</p>
+      <p>Defined at line 27 of file flexon_modules/utilities/units.cpp</p>
+      <h3 id="A709F7CBFFED1AFDD17AA8A31C936681157D1239">relw</h3>
+      <p>float relw(float value)</p>
+      <p>Defined at line 28 of file flexon_modules/utilities/units.cpp</p>
+    </div>
+    <h2 id="Enums">Enums</h2>
+    <div>
+      <table id="3439E5337C31EC6C78426F44D95993DE177FC243">
+        <thead>
+          <tr>
+            <th colspan="2">enum justifyTypes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>JUSTIFY_FLEX_START</td>
+            <td>1</td>
+          </tr>
+          <tr>
+            <td>JUSTIFY_FLEX_END</td>
+            <td>2</td>
+          </tr>
+          <tr>
+            <td>JUSTIFY_CENTER</td>
+            <td>3</td>
+          </tr>
+          <tr>
+            <td>JUSTIFY_SPACE_BETWEEN</td>
+            <td>4</td>
+          </tr>
+          <tr>
+            <td>JUSTIFY_SPACE_AROUND</td>
+            <td>5</td>
+          </tr>
+          <tr>
+            <td>JUSTIFY_SPACE_EVENLY</td>
+            <td>6</td>
+          </tr>
+          <tr>
+            <td>JUSTIFY_START</td>
+            <td>7</td>
+          </tr>
+          <tr>
+            <td>JUSTIFY_END</td>
+            <td>8</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>Defined at line 4 of file src/../flexon_modules/components/../componentbase/../utilities/defs.hpp</p>
+      <table id="5155A16CF17B69ECA146493C3AE5BB3E09391F68">
+        <thead>
+          <tr>
+            <th colspan="2">enum alignTypes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>ALIGN_CENTER</td>
+            <td>1</td>
+          </tr>
+          <tr>
+            <td>ALIGN_BASELINE</td>
+            <td>2</td>
+          </tr>
+          <tr>
+            <td>ALIGN_STRETCH</td>
+            <td>3</td>
+          </tr>
+          <tr>
+            <td>ALIGN_FLEX_START</td>
+            <td>4</td>
+          </tr>
+          <tr>
+            <td>ALIGN_FLEX_END</td>
+            <td>5</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>Defined at line 15 of file src/../flexon_modules/components/../componentbase/../utilities/defs.hpp</p>
+      <table id="F84C288D7830520779FC0458B9F875C29AB868C4">
+        <thead>
+          <tr>
+            <th colspan="2">enum positionTypes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>POSITION_ABSOLUTE</td>
+            <td>1</td>
+          </tr>
+          <tr>
+            <td>POSITION_RELATIVE</td>
+            <td>2</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>Defined at line 23 of file src/../flexon_modules/components/../componentbase/../utilities/defs.hpp</p>
+      <table id="21AA4811AD61F73D05D144629104829D6CD32E49">
+        <thead>
+          <tr>
+            <th colspan="2">enum colorFillType</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>LINEAR_GRAD</td>
+            <td>1</td>
+          </tr>
+          <tr>
+            <td>CONICAL_GRAD</td>
+            <td>2</td>
+          </tr>
+          <tr>
+            <td>RADIAL_GRAD</td>
+            <td>3</td>
+          </tr>
+          <tr>
+            <td>FILL</td>
+            <td>4</td>
+          </tr>
+          <tr>
+            <td>SHADOW_INSET</td>
+            <td>5</td>
+          </tr>
+          <tr>
+            <td>SHADOW_OUTSET</td>
+            <td>6</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>Defined at line 28 of file src/../flexon_modules/components/../componentbase/../utilities/defs.hpp</p>
+      <table id="415791324739FDD41B7392C8936BD49B0D8353DA">
+        <thead>
+          <tr>
+            <th colspan="2">enum unitTypes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>UNIT_FLEX</td>
+            <td>1</td>
+          </tr>
+          <tr>
+            <td>UNIT_VH</td>
+            <td>2</td>
+          </tr>
+          <tr>
+            <td>UNIT_VW</td>
+            <td>3</td>
+          </tr>
+          <tr>
+            <td>UNIT_REL</td>
+            <td>4</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>Defined at line 36 of file src/../flexon_modules/components/../componentbase/../utilities/defs.hpp</p>
+      <table id="9A6B20A6D54D710C373675E9F670E9AE36805C16">
+        <thead>
+          <tr>
+            <th colspan="2">enum overFlowTypes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>SHOW</td>
+            <td>1</td>
+          </tr>
+          <tr>
+            <td>HIDDEN</td>
+            <td>2</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>Defined at line 38 of file src/../flexon_modules/components/../componentbase/../utilities/defs.hpp</p>
     </div>
   </div>
   <div id="sidebar-right" class="col-xs-6 col-sm-6 col-md-2 sidebar sidebar-offcanvas-right">
     <ol>
+      <li>
+        <span>
+          <a href="#Namespaces">Namespaces</a>
+        </span>
+      </li>
       <li>
         <span>
           <a href="#Records">Records</a>
@@ -75,32 +281,84 @@
         <ul>
           <li>
             <span>
-              <a href="#7A6A8F838373D6F4EE6EBA2B473E475A390855F1">flexon_compose_tree</a>
-            </span>
-          </li>
-          <li>
-            <span>
               <a href="#3017D418E3EE725968AA296F0D948D0A30779148">main</a>
             </span>
           </li>
           <li>
             <span>
-              <a href="#0DF67C24452348EDC609BEC1DF8964E325FAD279">genCol</a>
+              <a href="#DAF1C8771D5E2B97C711D1BE9C8E5F46A0D970D8">hex</a>
             </span>
           </li>
           <li>
             <span>
-              <a href="#80906A50E134AB1CADE3B2586CBC72ECBC7982C7">key_callback</a>
+              <a href="#D025C645E7B2A5A3CCE2D401718494843005AC35">unitMountFactor</a>
             </span>
           </li>
           <li>
             <span>
-              <a href="#BD79AD1582E0C571581F1D2F7712D2621E044B89">resize_callback</a>
+              <a href="#B006A975EA6342DFDEC01B0F35EA7A6F691ECF39">rem</a>
             </span>
           </li>
           <li>
             <span>
-              <a href="#4D9B66FD926C098BAE6FB75898157EA068DCEFF5">maximize_callback</a>
+              <a href="#9699EF709A4B164EA1A9D89E0278762E0C4C915A">vh</a>
+            </span>
+          </li>
+          <li>
+            <span>
+              <a href="#1231923C4A666854EE6E8544E960F83484E13047">vw</a>
+            </span>
+          </li>
+          <li>
+            <span>
+              <a href="#FA3F3EC4EF737879972E6BC56D820BFA22E44D96">rel</a>
+            </span>
+          </li>
+          <li>
+            <span>
+              <a href="#EC6AAB1E35F0D3AAE20E6284589DEC1F1444C83D">relh</a>
+            </span>
+          </li>
+          <li>
+            <span>
+              <a href="#A709F7CBFFED1AFDD17AA8A31C936681157D1239">relw</a>
+            </span>
+          </li>
+        </ul>
+      </li>
+      <li>
+        <span>
+          <a href="#Enums">Enums</a>
+        </span>
+        <ul>
+          <li>
+            <span>
+              <a href="#3439E5337C31EC6C78426F44D95993DE177FC243">justifyTypes</a>
+            </span>
+          </li>
+          <li>
+            <span>
+              <a href="#5155A16CF17B69ECA146493C3AE5BB3E09391F68">alignTypes</a>
+            </span>
+          </li>
+          <li>
+            <span>
+              <a href="#F84C288D7830520779FC0458B9F875C29AB868C4">positionTypes</a>
+            </span>
+          </li>
+          <li>
+            <span>
+              <a href="#21AA4811AD61F73D05D144629104829D6CD32E49">colorFillType</a>
+            </span>
+          </li>
+          <li>
+            <span>
+              <a href="#415791324739FDD41B7392C8936BD49B0D8353DA">unitTypes</a>
+            </span>
+          </li>
+          <li>
+            <span>
+              <a href="#9A6B20A6D54D710C373675E9F670E9AE36805C16">overFlowTypes</a>
             </span>
           </li>
         </ul>
@@ -109,5 +367,5 @@
   </div>
 </main>
 <footer>
-  <span class="no-break">clang-doc version 19.1.7</span>
+  <span class="no-break">clang-doc version 20.1.8</span>
 </footer>

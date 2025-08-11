@@ -9,7 +9,6 @@ void showWindow();
 void startInput();
 } // namespace windowManager
 namespace layoutManager {
-void calcLayout(flexon_gui_tree *);
 void calcFromNode(flexon_view *);
 void calcAbs(flexon_view *);
 void mountFactors(struct flexon_unit_factor *);

@@ -15,9 +15,22 @@ public:
     mountp = point;
     modifierStyle = &(*point).style;
     modifierlay = &(*point).layout;
+
     memset(modifierlay, 0, sizeof(lay));
     memset(modifierStyle, 0, sizeof(decorator));
-    return;
+
+    (*modifierStyle).position = POSITION_RELATIVE;
+    (*modifierStyle).color.color_type = default_color_fill_type;
+    (*modifierStyle).color.bg_fill_type = default_color_fill_type;
+    (*modifierStyle).color.border_fill_type = default_color_fill_type;
+
+    (*modifierStyle).display = default_display_type;
+    default_display_type == DISPLAY_FLEX
+        ? default_layout_direction == LAYOUT_COLOUMN
+              ? (*modifierlay).height_unit = UNIT_FLEX
+              : (*modifierlay).width_unit = UNIT_FLEX
+        : (*modifierlay).height_unit = UNIT_VH;
+
   }; // { mountp = _point; }
 
   /*
@@ -403,10 +416,16 @@ public:
     return *this;
   }
 
-  // modifier &fillMaxSize();
+  modifier &fillMaxSize() {
+    (*modifierlay).height_unit = UNIT_FILL_MAX;
+    return *this;
+  };
+
   modifier &setFlex(float flex) {
     (*modifierlay).flex = flex;
-    (*modifierlay).height_unit = UNIT_FLEX; // height unit is given pritority
+    (*modifierStyle).layout_direction == LAYOUT_COLOUMN
+        ? (*modifierlay).height_unit = UNIT_FLEX
+        : (*modifierlay).width_unit = UNIT_FLEX;
     return *this;
   };
 
@@ -414,9 +433,11 @@ private:
   flexon_view *mountp = {nullptr};
   decorator *modifierStyle;
   lay *modifierlay;
-  //  __color **bgRef = nullptr;
-  //__color **colorRef = nullptr;
-  // __color **borderColorRef = nullptr;
+
+  enum display_types default_display_type = DISPLAY_FLEX;
+  enum layout_directions default_layout_direction = LAYOUT_COLOUMN;
+  enum color_fill_type default_color_fill_type = COLOR_FILL;
+  enum over_flow_types default_over_flow_type = OVER_SHOW;
 
   void fillhex(uint32_t *arg, colornc *color_ref) {
     color_ref->r = (*arg >> 24) & 0xff;

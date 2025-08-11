@@ -26,6 +26,8 @@ typedef struct {
   float height;
   float width;
   float flex;
+  float x;
+  float y;
   uni_param margin;
   uni_param padding;
   uni_param Border;
@@ -63,6 +65,8 @@ typedef struct {
   enum justify_types justifyItems;
   enum position_types position;
   enum over_flow_types overflow;
+  enum display_types display;
+  enum layout_directions layout_direction;
 } decorator;
 
 struct base_view {

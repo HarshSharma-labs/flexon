@@ -19,6 +19,7 @@ public:
     global_stitch = &flexon_tree.relative_tree.child;
     callchild();
     print_node_diagonistics(flexon_tree.relative_tree.child);
+    subsystem::layoutManager::calcFromNode(flexon_tree.relative_tree.child);
   };
 
 private:

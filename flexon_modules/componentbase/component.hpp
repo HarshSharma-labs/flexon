@@ -30,7 +30,7 @@ typedef struct {
   float y;
   uni_param margin;
   uni_param padding;
-  uni_param Border;
+  uni_param border;
   enum unit_types height_unit;
   enum unit_types width_unit;
 } lay;
@@ -69,12 +69,21 @@ typedef struct {
   enum layout_directions layout_direction;
 } decorator;
 
+typedef struct {
+  float vertex[12];
+  unsigned int indices[6];
+} gpu_data;
+
 struct base_view {
   lay layout;
   decorator style;
+  gpu_data gpu_vertex;
   base_view *parent{nullptr};
   base_view *child{nullptr};
+  base_view *prev{nullptr};
+  base_view *self{nullptr};
   base_view *neighbour{nullptr};
+  void (*clean_ptr)(base_view *){nullptr};
 };
 
 typedef struct {

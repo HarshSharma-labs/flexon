@@ -5,12 +5,15 @@ void printColor(int r, int g, int b);
 void resetColor();
 
 void print_node_diagonistics(struct base_view *node) {
-  std::cout << " Node diagonostics :" << std::endl;
+  std::cout << "\n Node diagonostics :" << std::endl;
   std::cout << " Node mem addr                            : " << std::hex
             << node << std::endl;
   std::cout << " Node style : " << std::endl;
   std::cout << "   Node  height width                     : "
             << node->layout.height << " " << node->layout.width << std::endl
+            << "   Node  x  y                             : " << node->layout.x
+            << " " << node->layout.y << std::endl
+
             << "   Node padding{t,l,r,b}                  : "
             << node->layout.padding.top << "," << node->layout.padding.left
             << "," << node->layout.padding.right << ","
@@ -20,12 +23,25 @@ void print_node_diagonistics(struct base_view *node) {
             << node->layout.margin.right << "," << node->layout.margin.bottom
             << "\n"
             << "   Node border{t,l,r,b}                   : "
-            << node->layout.Border.top << "," << node->layout.Border.left << ","
-            << node->layout.Border.right << "," << node->layout.Border.bottom
+            << node->layout.border.top << "," << node->layout.border.left << ","
+            << node->layout.border.right << "," << node->layout.border.bottom
             << "\n"
             << "   Node flex                              : "
             << node->layout.flex << "\nNode Decoration(colors) : " << std::endl
             << "   Node bgColor{rgba}                     : ";
+  std::cout << "\n Node NDC coordinates :                   : \n";
+  std::cout << " Node NDC coordinates topright :          :  x,y,z "
+            << node->gpu_vertex.vertex[0] << ' ' << node->gpu_vertex.vertex[1]
+            << ' ' << node->gpu_vertex.vertex[2];
+  std::cout << "\n Node NDC coordinates botright :          :  x,y,z "
+            << node->gpu_vertex.vertex[3] << ' ' << node->gpu_vertex.vertex[4]
+            << ' ' << node->gpu_vertex.vertex[5];
+  std::cout << "\n Node NDC coordinates botleft  :          :  x,y,z "
+            << node->gpu_vertex.vertex[6] << ' ' << node->gpu_vertex.vertex[7]
+            << ' ' << node->gpu_vertex.vertex[8];
+  std::cout << "\n Node NDC coordinates topleft  :          :  x,y,z "
+            << node->gpu_vertex.vertex[9] << ' ' << node->gpu_vertex.vertex[10]
+            << ' ' << node->gpu_vertex.vertex[11];
 
   printColor(static_cast<int>(node->style.color.bgColor.r),
              static_cast<int>(node->style.color.bgColor.g),
@@ -88,7 +104,7 @@ void print_node_diagonistics(struct base_view *node) {
             << static_cast<int>(node->style.color.border.right.b)
             << static_cast<int>(node->style.color.border.right.a);
   resetColor();
-  std::cout << "  " << std::endl;
+  std::cout << "  \n\n\n\n" << std::endl;
   return;
 }
 

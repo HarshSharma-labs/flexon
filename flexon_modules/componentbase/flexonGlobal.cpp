@@ -3,6 +3,8 @@
 #include "./component.hpp"
 #include <cstdint>
 
-flexon_view **global_stitch;
-flexon_view *global_parent_stitch;
+flexon_view **global_stitch = nullptr;
+flexon_view *global_parent_stitch = nullptr;
+flexon_view *global_previous_stitch = nullptr;
+
 modifier<uint32_t> Modifier;

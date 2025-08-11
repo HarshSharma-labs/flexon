@@ -16,8 +16,8 @@ public:
     modifierStyle = &(*point).style;
     modifierlay = &(*point).layout;
 
-    memset(modifierlay, 0, sizeof(lay));
-    memset(modifierStyle, 0, sizeof(decorator));
+    memset(modifierlay, '\0', sizeof(lay));
+    memset(modifierStyle, '\0', sizeof(decorator));
 
     (*modifierStyle).position = POSITION_RELATIVE;
     (*modifierStyle).color.color_type = default_color_fill_type;
@@ -25,6 +25,7 @@ public:
     (*modifierStyle).color.border_fill_type = default_color_fill_type;
 
     (*modifierStyle).display = default_display_type;
+    (*modifierStyle).layout_direction = default_layout_direction;
     default_display_type == DISPLAY_FLEX
         ? default_layout_direction == LAYOUT_COLOUMN
               ? (*modifierlay).height_unit = UNIT_FLEX
@@ -185,7 +186,6 @@ public:
           switch (count[type]) {
           case 'm':
             count += 1;
-            std::cout << spaces_value[0] << std::endl;
             fill_uni_param(&(*modifierlay).margin, &count[type], &count,
                            &arg_count, &spaces_value[0]);
             break;
@@ -428,6 +428,13 @@ public:
         : (*modifierlay).width_unit = UNIT_FLEX;
     return *this;
   };
+  modifier &setLayoutFlex() {
+    (*modifierlay).flex = 1.0f;
+    (*modifierStyle).layout_direction = LAYOUT_COLOUMN;
+    (*modifierStyle).display = DISPLAY_FLEX;
+    return *this;
+  };
+  modifier &setDisplay(const char *types) {}
 
 private:
   flexon_view *mountp = {nullptr};
@@ -435,7 +442,7 @@ private:
   lay *modifierlay;
 
   enum display_types default_display_type = DISPLAY_FLEX;
-  enum layout_directions default_layout_direction = LAYOUT_COLOUMN;
+  enum layout_directions default_layout_direction = LAYOUT_ROW;
   enum color_fill_type default_color_fill_type = COLOR_FILL;
   enum over_flow_types default_over_flow_type = OVER_SHOW;
 

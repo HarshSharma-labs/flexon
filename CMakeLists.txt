@@ -3,10 +3,10 @@ project(flexon)
 
 set(OpenGL_GL_PREFERENCE LEGACY)
 # Find required packages
-find_package(LibXml2 REQUIRED)
-find_package(Curses REQUIRED)
-find_package(OpenGL REQUIRED)
-pkg_search_module(GLFW REQUIRED glfw3)
+#find_package(LibXml2 REQUIRED)
+#find_package(Curses REQUIRED)
+find_package(Vulkan REQUIRED)
+find_package(glfw3 REQUIRED)
 
 
 # Set CMake export compile commands
@@ -25,9 +25,6 @@ include_directories(
     "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/*.hpp" 
     "${PROJECT_SOURCE_DIR}/flexon_modules/utilities/*.hpp" 
 
-     ${LIBXML2_INCLUDE_DIR}
-     ${CURSES_INCLUDE_DIR}
-     ${GLFW_INCLUDE_DIR}
 )
 
 # Find source files
@@ -43,6 +40,6 @@ file(GLOB SRCS_FILES
 add_executable(${ENGINE_NAME} ${SRCS_FILES})
 
 # Link libraries to the executable
-target_link_libraries(${ENGINE_NAME} ${OPENGL_LIBRARIES} ${GLFW_LIBRARIES} ${LIBXML2_LIBRARIES} ${CURSES_LIBRARIES})
+target_link_libraries(${ENGINE_NAME} ${GLFW_LIBRARIES})
 
 

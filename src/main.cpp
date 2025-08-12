@@ -9,7 +9,14 @@ int main() {
              Modifier
                  .Color("%bl %bt %bb", hex(0xcf00ff21), hex(0xffffffff),
                         hex(0xcfffcfac))
-                 .space("%mb %mt %ml %mr", 100.0f, 100.0f, 100.f, 100.0f)
+                 .space("%m", 1.0f)
+                 .setFlex(1.0f);
+           });
+           View([]() {
+             Modifier
+                 .Color("%bl %bt %bb", hex(0xcf00ff21), hex(0xffffffff),
+                        hex(0xcfffcfac))
+                 .space("%m", 1.0f)
                  .setFlex(1.0f);
            });
          });

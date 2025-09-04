@@ -3,7 +3,7 @@
 #include "../flexon_modules/utilities/units.hpp"
 
 int main() {
-  flexon([]() -> void {},
+  flexon("Hello app",[]() -> void {},
          []() {
            View([]() {
              Modifier

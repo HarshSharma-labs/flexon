@@ -10,7 +10,7 @@ void free_node(flexon_view *starting_node) {
     starting_node->neighbour->clean_ptr(starting_node->neighbour);
   }
 
-  std::cout << " got request to clean :" << starting_node << std::endl;
+  std::cout << " Got request to clean :" << starting_node << std::endl;
 
   delete starting_node;
 }

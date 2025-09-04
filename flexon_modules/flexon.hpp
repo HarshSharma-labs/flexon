@@ -1,9 +1,13 @@
 #ifndef __FLEXON__
 #define __FLEXON__
 
+#define RENDERER_VULKAN
+#define WINDOW_MANAGER_WAYLAND
+
+#include "./subsystem/windowManager.hpp"
+#include "./subsystem/renderer/renderer.hpp"
 #include "./componentbase/component.hpp"
 #include "./componentbase/flexonGlobal.hpp"
-#include "./subsystem/flexonSubsystems.hpp"
 #include "./utilities/cleaner.hpp"
 #include "components/Decorator.hpp"
 #include <cstring>
@@ -13,31 +17,47 @@ typedef struct baseView *capture;
 
 class flexon {
 public:
-  template <typename T> flexon(void (*root_layout_set)(), T call_child) {
-    static_assert(std::is_invocable<T>::value,
+  template <typename T> flexon(const char *appName,void (*root_layout_set)(), T call_child) {
+    windowManager.create(appName);
+    renderer.initlise();
+    renderer.mount_surface(windowManager.getSurfacePointer(),windowManager.getDisplayPointer(),windowManager.getpixel()); 
+ 
+    renderer.render();
+    windowManager.dispatchEvent();
+    renderer.destroy_renderer();
+    windowManager.destroy();
+/*
+   static_assert(std::is_invocable<T>::value,
                   "flexon(arg): arg must be a lambda function");
-    memset(&flexon_tree.relative_tree, '\0', sizeof(flexon_view));
-    Modifier.mount(&flexon_tree.relative_tree);
-    root_layout_set();
+    memset(&tree_type.relative, '\0', sizeof(flexon_view));
 
-    subsystem.window.start();
-    subsystem.window.show(&flexon_tree.relative_tree);
-    subsystem.layout.mountWH(flexon_tree.relative_tree.layout.height,
-                             flexon_tree.relative_tree.layout.width);
-    global_stitch = &flexon_tree.relative_tree.child;
+    Modifier.mount(&tree_type.relative);
 
+    global_stitch = &tree_type.relative.child;
+    global_parent_stitch = &tree_type.relative;
+
+    start_subsystems_window();
     call_child();
-    if (flexon_tree.relative_tree.child != nullptr) {
-      flexon_tree.relative_tree.child->parent = &flexon_tree.relative_tree;
-    }
-    subsystem.layout.calcFromNode(flexon_tree.relative_tree.child);
-    subsystem.window.start_Input();
-    free_node(flexon_tree.relative_tree.child);
+    
+    start_rendering();
+    */
   };
 
+  ~flexon() {/* free_node(tree_type.relative.child); */ }
+
 private:
-  flexon_gui_tree flexon_tree;
-  subsystemModule subsystem;
-};
+  void start_subsystems_window() {
+   // subsystem.window.getRootLayout(&tree_type.relative);
+    //subsystem.layout.mountWH(tree_type.relative.layout.height,tree_type.relative.layout.width);
+  }
+  void start_rendering() {
+   // subsystem.layout.calcFromNode(tree_type.relative.child);
+    //subsystem.window.startInput();
+  };
+
+  flexon_gui_tree tree_type;
+  windowManagerSubsystem windowManager;
+  renderSubsystem renderer;
+  };
 
 #endif

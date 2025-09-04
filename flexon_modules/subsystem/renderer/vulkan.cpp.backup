@@ -1,0 +1,761 @@
+#include "./vulkan.hpp"
+#include <wayland-client.h>
+
+void vulkan_renderer::initlise() {
+ 
+#ifndef NDEBUG
+  if(!checkValidationLayerSupport(validationLayer,&enableLayerCount)){
+    std::cout<<"Validation Layer not supported aborting"<<std::endl;
+    std::abort();
+  }
+  #endif
+  
+    if(vkEnumerateInstanceVersion(&vksystem.apiVersion) != VK_SUCCESS){
+      std::cout<<"Error probing api verision"<<std::endl;
+      std::abort();
+    }
+    if(!checkInstanceExtensionSupport(instanceExtensionName,&instanceExtensionCount)){
+    std::cout<<"instance doent support required extension"<<std::endl;
+    std::abort();
+    }
+    if(!createinstance(&vksystem)){
+      std::cout<<"instance Creation Failed"<<std::endl;
+      std::abort();
+    }
+    if(!createSurface(&vksystem)){
+      std::cout<<"Surface creation failed \n"<<std::endl;
+      std::abort();
+     } 
+   
+    if(!selectPhysicalDevice(&vksystem)){
+      std::cout<<"physicalDevice selection failed: "<<std::endl;
+      std::abort();
+     }
+  
+   if(!createLogicalDevice(&vksystem)){
+     std::cout<<"[LOGICAL DEVICE] Creation of logical device failed\n";
+    }
+
+    if(!createCommandPool(&vksystem)){
+      std::cout<<"[COMMAND POOL] Creation of command pool failed\n";
+    }
+   if(!createRenderPass(&vksystem)){
+    std::cout<<"[RENDERPASS] Creation of render pass failed : "<<std::endl;
+   }
+   if(!createSwapchain(&vksystem)){
+       std::cout<<"[SWAPCHAIN] Error creating swap chain\n";
+    }
+   if(!allocateResource(&vksystem)){
+     std::cout<<"[COMMAND BUFFER] Creation of command buffer failed \n";
+   } 
+    showFrame(&vksystem);
+  /*
+    if(!createGraphicsPipeline(&vksystem)){
+      std::cout<<"[GRAPHICS] Error creating Graphics Pipeline\n";
+    }
+  */
+   
+  return;
+}
+
+#ifndef NDEBUG
+bool vulkan_renderer::checkValidationLayerSupport(const char **layerName,const int *count){
+
+  uint32_t layersCount {0};
+
+  vkEnumerateInstanceLayerProperties(&layersCount,nullptr);
+  std::vector<VkLayerProperties> availableLayers(layersCount);
+  vkEnumerateInstanceLayerProperties(&layersCount,availableLayers.data());
+  for(int i = 0 ; i < *count ; i++){
+    bool layerFound = false;
+    for(const auto& layerProperties:availableLayers){
+      if(strcmp(layerName[i],layerProperties.layerName) == 0){
+        layerFound = true;
+        break;
+      }
+    }
+    if(!layerFound){
+      std::cout<<"[VALIDATION LAYER] Error requested layer doesn't exist : "<<validationLayer[i]<<std::endl;
+      return false;
+    }
+  }
+  return true;
+}
+
+#endif
+
+bool vulkan_renderer::checkExtensionSupport(VkPhysicalDevice &phyDevice,const char**extensionName,const int *count){
+
+
+  uint32_t extensionCount {0};
+  bool extensionFound = false;
+
+  vkEnumerateDeviceExtensionProperties(phyDevice,nullptr,&extensionCount,nullptr);
+  std::vector<VkExtensionProperties> availableExtension(extensionCount);
+  vkEnumerateDeviceExtensionProperties(phyDevice,nullptr,&extensionCount,availableExtension.data());
+  for(int i = 0 ; i < *count ; i++){
+    for(const auto& extensionProperties:availableExtension){
+      if(strcmp(extensionNames[i],extensionProperties.extensionName) == 0){
+        extensionFound = true;
+      }
+    }
+
+    if(!extensionFound){
+      std::cout<<"[EXTENSION] Error required EXTENSION doesn't exist : "<<extensionName[i]<<std::endl;
+      return false;
+    }
+  }
+
+  return extensionFound;
+}
+
+bool vulkan_renderer::checkInstanceExtensionSupport(const char ** instanceExtensionName,const int *count){
+
+  uint32_t countExt = 0;
+  bool success = false;
+  vkEnumerateInstanceExtensionProperties(NULL,&countExt,NULL);
+
+  std::vector<VkExtensionProperties> supportedExtension(countExt);
+
+  vkEnumerateInstanceExtensionProperties(NULL,&countExt,supportedExtension.data());
+  for(int i = 0 ; i < *count ; i++){
+  for(auto &ext : supportedExtension){
+    if(strcmp(ext.extensionName,instanceExtensionName[i]) == 0){
+      success = true; 
+      break;
+    }
+      success = false;
+  }
+    if(!success)
+    std::cout<<"[EXTENSION] Extension not supported : "<<instanceExtensionName[i]<<std::endl;
+}
+
+
+  return success;
+}
+bool vulkan_renderer::createinstance(VkSystem* vksystem){
+
+  create_struct(appinfo,VkApplicationInfo,
+                  .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
+                  .pApplicationName = "hello",
+                  .applicationVersion = VK_MAKE_VERSION(1,0,0),
+                  .pEngineName = "hello",
+                  .engineVersion = VK_MAKE_VERSION(1,0,0),
+                  .apiVersion = vksystem->apiVersion,
+                  );
+
+   create_struct(appinstance,VkInstanceCreateInfo,
+                       .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
+                       .pApplicationInfo = &appinfo,
+                       .enabledLayerCount = (uint32_t)0,
+                       .ppEnabledLayerNames = NULL,
+                       .enabledExtensionCount = (uint32_t)instanceExtensionCount,
+                       .ppEnabledExtensionNames = instanceExtensionName, 
+                       );
+  #ifndef NDEBUG
+    appinstance.enabledLayerCount = static_cast<uint32_t>(enableLayerCount);
+    appinstance.ppEnabledLayerNames = validationLayer;
+  #endif
+ 
+  uint32_t Code = vkCreateInstance(&appinstance,NULL,&vksystem->instance);
+  if(Code != VK_SUCCESS){
+    std::cout<<"instance creation failed"<<std::endl;
+    return false;
+  }
+   return true;
+}
+
+
+bool vulkan_renderer::selectPhysicalDevice(VkSystem *vksystem){
+
+  uint32_t device_count {0};
+
+   vkEnumeratePhysicalDevices(vksystem->instance,&device_count,nullptr);
+    if(device_count == 0){
+      std::cout<<"[DEVICE ERROR] Failed to find a GPU with the vulkan support. \n";
+      return false;
+    }
+
+  std::vector<VkPhysicalDevice> availableDevices(device_count);
+  vkEnumeratePhysicalDevices(vksystem->instance,&device_count,availableDevices.data());
+  
+    if(!filterPhysicalDevice(vksystem,availableDevices)){
+      std::cout<<"[DEVICE ERROR] Failed to find a GPU with suitable requirements \n";
+      return false;
+    }
+    std::cout<<"[DEVICE SUCCESS] selected a physical Device\n"; 
+  
+   return true; 
+};
+
+bool vulkan_renderer::filterPhysicalDevice(VkSystem *vksystem , std::vector<VkPhysicalDevice>&devicesList){
+
+
+   std::multimap<int,physicalDeviceConf> sortedDevice;
+   std::vector<physicalDeviceConf> deviceConf(devicesList.size());
+   int i = 0;
+   for(const auto& device : devicesList){
+     int score = scoreDevice(vksystem,&deviceConf[i],device);
+      std::cout<<"[DEVICE SCORE] score of devices : "<<score<<'\n';
+      sortedDevice.insert(std::make_pair(score,deviceConf[i]));
+      i += 1;
+    }
+   if(sortedDevice.rbegin()->first > 0){
+     memcpy(&vksystem->physicalDevice,&sortedDevice.rbegin()->second.deviceScore,sizeof(physicalDeviceConf));
+       return true;
+   } 
+    return false;
+}
+
+int vulkan_renderer::scoreDevice(VkSystem *vksystem,physicalDeviceConf *deviceConf,VkPhysicalDevice whichDevice){
+
+ int evaluatedScore = 0;
+ deviceConf->device = whichDevice;
+
+ create_struct(devProperties, VkPhysicalDeviceProperties);
+ create_struct(physicalDeviceFeature,VkPhysicalDeviceFeatures);
+ vkGetPhysicalDeviceProperties(whichDevice,&devProperties);
+ vkGetPhysicalDeviceFeatures(whichDevice,&physicalDeviceFeature);
+
+
+  if(!physicalDeviceFeature.geometryShader){
+      evaluatedScore -= 1000;
+      return evaluatedScore;
+  }
+  if(!findSuitableQueueFamily(vksystem,deviceConf,whichDevice)){
+    evaluatedScore -= 10000;
+  };
+  if(!checkExtensionSupport(whichDevice,extensionNames,&extensionCount)){
+    evaluatedScore -= 5000;
+  }
+  if(!checkSwapchainSupport(vksystem,deviceConf,whichDevice)){
+    evaluatedScore -= 10000;
+  }
+  evaluatedScore += 1000;
+
+  switch(devProperties.deviceType){
+
+    case VK_PHYSICAL_DEVICE_TYPE_OTHER:
+        evaluatedScore -= 1000;
+        return evaluatedScore;
+    break;
+    case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU : 
+        evaluatedScore += 500;
+      break;
+    case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU :
+        evaluatedScore += 1000;
+      break;
+    case VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU :
+        evaluatedScore += 250;
+      break;
+    case VK_PHYSICAL_DEVICE_TYPE_CPU : 
+        evaluatedScore += 100;
+      break;
+   }  
+   deviceConf->deviceScore = evaluatedScore;
+    return evaluatedScore;
+}
+
+bool vulkan_renderer::checkSwapchainSupport(VkSystem *vksystem,physicalDeviceConf *deviceConf,VkPhysicalDevice device){
+
+  bool success = false;
+
+  vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device,vksystem->surface,&deviceConf->deviceSurfaceCapability);
+
+  if(deviceConf->deviceSurfaceCapability.minImageCount <= 0) 
+     return false;
+
+
+  uint32_t presentationModeCount = 0;
+  vkGetPhysicalDeviceSurfacePresentModesKHR(device,vksystem->surface,&presentationModeCount,NULL);
+
+  if(presentationModeCount == 0){
+    return false;
+  }
+
+  uint32_t surfaceFormatCount = 0;
+  vkGetPhysicalDeviceSurfaceFormatsKHR(device,vksystem->surface,&surfaceFormatCount,NULL);
+
+  if(surfaceFormatCount == 0){
+    return false;
+  }
+
+  std::vector<VkPresentModeKHR> presentationModes(presentationModeCount);
+  std::vector<VkSurfaceFormatKHR> surfaceFormats(surfaceFormatCount);
+
+ vkGetPhysicalDeviceSurfacePresentModesKHR(device,vksystem->surface,&presentationModeCount,presentationModes.data());
+ vkGetPhysicalDeviceSurfaceFormatsKHR(device,vksystem->surface,&surfaceFormatCount,surfaceFormats.data());
+
+
+  for(const auto& availableFormat: surfaceFormats){
+    if(availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR && availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB){
+     deviceConf->selectedSurfaceFormat.format =  VK_FORMAT_B8G8R8A8_SRGB;
+     deviceConf->selectedSurfaceFormat.colorSpace =  VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
+     deviceConf->swapChainSurfaceFormat =  VK_FORMAT_B8G8R8A8_SRGB;
+
+     success = true;
+    }
+  }
+
+  deviceConf->selectedPresentationMode = VK_PRESENT_MODE_FIFO_KHR;
+
+  for(const auto& availablePresentationMode : presentationModes){
+    if(availablePresentationMode == VK_PRESENT_MODE_MAILBOX_KHR){
+     deviceConf->selectedPresentationMode = VK_PRESENT_MODE_MAILBOX_KHR;
+    }
+  }
+
+  if(deviceConf->deviceSurfaceCapability.currentExtent.width != std::numeric_limits<uint32_t>::max()){
+    deviceConf->deviceSwapExtents = deviceConf->deviceSurfaceCapability.currentExtent;
+  }else{
+   deviceConf->deviceSwapExtents.width = std::clamp(vksystem->requestedSurfaceWidth,deviceConf->deviceSurfaceCapability.minImageExtent.width ,deviceConf->deviceSurfaceCapability.maxImageExtent.width);
+   deviceConf->deviceSwapExtents.height = std::clamp(vksystem->requestedSurfaceHeight,deviceConf->deviceSurfaceCapability.minImageExtent.height ,deviceConf->deviceSurfaceCapability.maxImageExtent.height); 
+}
+  deviceConf->swapImageCount = deviceConf->deviceSurfaceCapability.minImageCount + 1;
+
+  if(deviceConf->deviceSurfaceCapability.maxImageCount > 0 && deviceConf->swapImageCount > deviceConf->deviceSurfaceCapability.maxImageCount){
+   deviceConf->swapImageCount = deviceConf->deviceSurfaceCapability.maxImageCount; 
+  }
+
+  return success;
+}
+
+bool vulkan_renderer::findSuitableQueueFamily(VkSystem *vksystem,physicalDeviceConf *deviceConfig,VkPhysicalDevice &phydevice){
+
+  uint32_t queueFamilyCount = 0;
+  uint32_t queueFamilyIndex = 0;
+  bool success = false;
+
+  vkGetPhysicalDeviceQueueFamilyProperties(phydevice,&queueFamilyCount,nullptr);
+  if(queueFamilyCount == (uint32_t)0){
+    std::cout<<"[QUEUE FAMILY] Queue family count is 0.\n";
+    return success;
+  }
+  std::vector<VkQueueFamilyProperties> queueFamilyStruct(queueFamilyCount);
+  vkGetPhysicalDeviceQueueFamilyProperties(phydevice,&queueFamilyCount,queueFamilyStruct.data());
+
+  
+  for(const auto &queueIterator:queueFamilyStruct){
+     VkBool32 supportSurface = VK_FALSE;
+     vkGetPhysicalDeviceSurfaceSupportKHR(phydevice,queueFamilyIndex,vksystem->surface,&supportSurface);
+   if(queueIterator.queueFlags & VK_QUEUE_GRAPHICS_BIT && supportSurface == VK_TRUE){ 
+      success = true;
+       break;
+    }
+    queueFamilyIndex++;
+  }
+  deviceConfig->queuefamilyindex = queueFamilyIndex; 
+  return success;
+};
+
+
+bool vulkan_renderer::createSurface(VkSystem *vksystem){
+  create_struct(surfaceInfo,VkWaylandSurfaceCreateInfoKHR,
+                .sType = VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR,
+                .pNext = NULL,
+                .display = vksystem->vulkan_wayland_display_ptr,
+                .surface = vksystem->vulkan_wayland_surface_ptr
+                );
+
+  vkCreateWaylandSurfaceKHR(vksystem->instance,&surfaceInfo,NULL,&vksystem->surface);
+  return true;
+}
+
+bool vulkan_renderer::createLogicalDevice(VkSystem *vksystem){
+
+
+  create_struct(queueFamilyStruct,VkDeviceQueueCreateInfo,
+                .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+                .pNext = NULL,
+                .queueCount = 1,
+                .pQueuePriorities = &vksystem->queuePriority
+                );
+  queueFamilyStruct.queueFamilyIndex =  vksystem->physicalDevice.queuefamilyindex;
+
+  create_struct(deviceFeatures,VkPhysicalDeviceFeatures);
+
+  create_struct(deviceCreateInfo,VkDeviceCreateInfo,
+                .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
+                .pNext = NULL,
+                .queueCreateInfoCount = 1,
+                .pQueueCreateInfos = &queueFamilyStruct,
+                .pEnabledFeatures = &deviceFeatures,
+               );
+ 
+    deviceCreateInfo.enabledExtensionCount = (uint32_t)extensionCount;
+    deviceCreateInfo.ppEnabledExtensionNames = extensionNames;
+ 
+
+  if(vkCreateDevice(vksystem->physicalDevice.device,&deviceCreateInfo,nullptr,&vksystem->virtualDevice) != VK_SUCCESS){
+    std::cout<<"[DEVICE] Creation of logical Device failed. \n";
+  }
+   std::cout<<"[DEVICE] Creation of logical Device success. \n";
+   vkGetDeviceQueue(vksystem->virtualDevice,vksystem->physicalDevice.queuefamilyindex,0,&vksystem->graphicQueue);
+  return true;
+};
+
+
+
+bool vulkan_renderer::createSwapchain(VkSystem *vksystem){
+
+   create_struct(swapchainInfo,VkSwapchainCreateInfoKHR,
+                 .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
+                 .pNext = NULL,
+                 .surface = vksystem->surface,
+                 .minImageCount = vksystem->physicalDevice.swapImageCount,
+                 .imageFormat = vksystem->physicalDevice.selectedSurfaceFormat.format,
+                 .imageColorSpace = vksystem->physicalDevice.selectedSurfaceFormat.colorSpace,
+                 .imageExtent = vksystem->physicalDevice.deviceSwapExtents,
+                 .imageArrayLayers = 1,
+                 .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+                 .imageSharingMode = VK_SHARING_MODE_EXCLUSIVE,
+                 .queueFamilyIndexCount = 0,
+                 .pQueueFamilyIndices = nullptr,
+                 .preTransform = vksystem->physicalDevice.deviceSurfaceCapability.currentTransform,
+                 .compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
+                 .presentMode = vksystem->physicalDevice.selectedPresentationMode,
+                 .clipped = VK_TRUE,
+                 .oldSwapchain = vksystem->surfaceSwapchain
+                 );
+
+   if(vkCreateSwapchainKHR(vksystem->virtualDevice,&swapchainInfo,nullptr,&vksystem->surfaceSwapchain) != VK_SUCCESS){
+    return false;
+   }
+   
+   if(vkGetSwapchainImagesKHR(vksystem->virtualDevice,vksystem->surfaceSwapchain,&vksystem->renderPool.count,NULL) != VK_SUCCESS){
+    std::cout<<"[SWAPCHAIN] Failed to retrive swapchain images count : "<<std::endl;
+    return false;
+  }
+
+  vksystem->renderPool.image = new VkImage[vksystem->renderPool.count];
+  vksystem->renderPool.imageView = new VkImageView[vksystem->renderPool.count];
+
+  
+  if(vkGetSwapchainImagesKHR(vksystem->virtualDevice,vksystem->surfaceSwapchain,&vksystem->renderPool.count,vksystem->renderPool.image) != VK_SUCCESS){
+    std::cout<<"[SWAPCHAIN] Failed to retrive swapchain images count : "<<std::endl;
+    return false;
+  }
+   
+   create_struct(viewCompMapping , VkComponentMapping,
+                 .r = VK_COMPONENT_SWIZZLE_IDENTITY,
+                 .g = VK_COMPONENT_SWIZZLE_IDENTITY,
+                 .b = VK_COMPONENT_SWIZZLE_IDENTITY,
+                 .a = VK_COMPONENT_SWIZZLE_IDENTITY,
+                 );
+
+  create_struct(viewSubresource , VkImageSubresourceRange , 
+                .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                .baseMipLevel = 0,
+                .levelCount = 1,
+                .baseArrayLayer = 0,
+                .layerCount = 1
+                );
+
+
+  for(int i = 0 ; i < vksystem->renderPool.count ; i++){
+
+       create_struct(imageViewInfo,VkImageViewCreateInfo,
+                   .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+                   .pNext = NULL,
+                   .image = vksystem->renderPool.image[i],
+                   .viewType = VK_IMAGE_VIEW_TYPE_2D,
+                   .format = vksystem->physicalDevice.swapChainSurfaceFormat,
+                   .components = viewCompMapping,
+                   .subresourceRange = viewSubresource
+                  );
+
+    if(vkCreateImageView(vksystem->virtualDevice,&imageViewInfo,NULL,(vksystem->renderPool.imageView + i)) != VK_SUCCESS){
+         std::cout<<"[VIEWIMAGE] creation of view image failed. "<<std::endl;
+      }
+    
+    }
+  
+   if(!createFrameBuffer(vksystem)){
+      std::cout<<"[FRAMEBUFFER] Creation of framebuffer failed \n";
+    }
+
+
+  std::cout<<"[SWAPCHAIN] Creation of swapchain OK. "<<std::endl;
+
+  return true;
+}
+
+
+bool vulkan_renderer::createFrameBuffer(VkSystem *vksystem){
+
+  vksystem->renderPool.imageFrameBuffer = new VkFramebuffer[vksystem->renderPool.count];
+
+  for(int i = 0 ; i < vksystem->renderPool.count ; i++){
+
+  create_struct(frameBufferInfo, VkFramebufferCreateInfo,
+                   .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
+                   .pNext = NULL,
+                   .flags = 0,
+                   .renderPass = vksystem->renderPass,
+                   .height = vksystem->requestedSurfaceHeight,
+                   .layers = 1
+                 );
+                 frameBufferInfo.attachmentCount = 1;
+                 frameBufferInfo.pAttachments = vksystem->renderPool.imageView + i;
+ 
+     frameBufferInfo.width = vksystem->requestedSurfaceWidth;
+   
+     if(vkCreateFramebuffer(vksystem->virtualDevice,&frameBufferInfo,NULL,(vksystem->renderPool.imageFrameBuffer + i)) != VK_SUCCESS){
+         std::cout<<"[FRAMEBUFFER] Creation of frame buffer failed. "<<std::endl;
+        return false;
+      }
+  }
+ 
+  return true;
+}
+
+bool vulkan_renderer::createRenderPass(VkSystem *vksystem){
+ 
+
+  create_struct(renderPassAttachmentInfo , VkAttachmentDescription ,
+                .format = vksystem->physicalDevice.swapChainSurfaceFormat,
+                .samples = VK_SAMPLE_COUNT_1_BIT,
+                .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+                .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+                .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+                .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+                .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED, 
+                .finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
+                );
+  create_struct(attachmentinfo , VkAttachmentReference,
+                .attachment = 0,
+                .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+               );
+
+  create_struct(renderPassSubPassdescription , VkSubpassDescription , 
+                .pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
+                .colorAttachmentCount = 1,
+                .preserveAttachmentCount = 0
+                );
+    renderPassSubPassdescription.pColorAttachments = &attachmentinfo;
+
+  
+  create_struct(renderPassInfo,VkRenderPassCreateInfo,
+                 .sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
+                 .pNext = NULL,
+                 .flags = 0,
+                 .attachmentCount = 1,
+                 .pAttachments = &renderPassAttachmentInfo,
+                 .subpassCount = 1,
+                 .pSubpasses = &renderPassSubPassdescription,
+                );
+
+    if(vkCreateRenderPass(vksystem->virtualDevice,&renderPassInfo,NULL,&vksystem->renderPass) != VK_SUCCESS){
+    return false;
+    }
+  
+  return true;
+}
+
+bool vulkan_renderer::createCommandPool(VkSystem *vksystem){
+
+  create_struct(commandPoolInfo , VkCommandPoolCreateInfo ,
+                 .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+                 .pNext = NULL,
+                 .queueFamilyIndex = vksystem->physicalDevice.queuefamilyindex
+                  );
+  commandPoolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+
+  if(vkCreateCommandPool(vksystem->virtualDevice,&commandPoolInfo,NULL,&vksystem->commandPool) != VK_SUCCESS){
+    return false;
+  }
+
+  return true;
+};
+
+bool vulkan_renderer::allocateResource(VkSystem *vksystem){
+
+  vksystem->renderPool.imageCommandBuffer = new VkCommandBuffer[vksystem->renderPool.count];
+  vksystem->renderPool.imageFence = new VkFence[vksystem->renderPool.count];
+  vksystem->renderPool.imageStartSemaphore = new VkSemaphore[vksystem->renderPool.count];
+  vksystem->renderPool.imageEndSemaphore = new VkSemaphore[vksystem->renderPool.count];
+ 
+  create_struct(commandBufferInfo,VkCommandBufferAllocateInfo,
+                  .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+                  .pNext = NULL,
+                  .commandPool = vksystem->commandPool,
+                  .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+                  .commandBufferCount = vksystem->renderPool.count
+                  );
+
+    if(vkAllocateCommandBuffers(vksystem->virtualDevice,&commandBufferInfo,vksystem->renderPool.imageCommandBuffer) != VK_SUCCESS){
+       std::cout<<"[COMMAND BUFFER] Allocation of Command Buffer failed \n";
+      return false;
+    }
+
+    for(int i = 0 ; i < vksystem->renderPool.count ; i++){
+
+     create_struct(fenceinfo,VkFenceCreateInfo,
+                   .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
+                   .pNext = NULL,
+                   .flags = VK_FENCE_CREATE_SIGNALED_BIT
+                   );
+
+     if(vkCreateFence(vksystem->virtualDevice,&fenceinfo,NULL,(vksystem->renderPool.imageFence + i)) != VK_SUCCESS){
+        std::cout<<"[FENCE ALLOCATION] Allocation of fence failed \n";
+        return false;
+    }
+    create_struct(semaphoreInfo,VkSemaphoreCreateInfo,
+                  .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
+                  .pNext = NULL
+                  );
+     if(vkCreateSemaphore(vksystem->virtualDevice,&semaphoreInfo,NULL,(vksystem->renderPool.imageStartSemaphore + i)) != VK_SUCCESS){
+      std::cout<<"[SEMAPHORE END] Allocation of semaphore failed \n";
+      return false;
+      }
+     if(vkCreateSemaphore(vksystem->virtualDevice,&semaphoreInfo,NULL,(vksystem->renderPool.imageEndSemaphore + i)) != VK_SUCCESS){
+      std::cout<<"[SEMAPHORE END] Allocation of semaphore failed \n";
+      return false;
+      }
+  }
+  return true; 
+}
+
+void vulkan_renderer::freeResource(VkSystem *vksystem){
+ 
+  for(int i = 0 ; i < vksystem->renderPool.count ; i++){
+
+     vkDestroyFence(vksystem->virtualDevice,*(vksystem->renderPool.imageFence + i),NULL);
+     vkDestroySemaphore(vksystem->virtualDevice,*(vksystem->renderPool.imageStartSemaphore  + i),NULL);
+     vkDestroySemaphore(vksystem->virtualDevice,*(vksystem->renderPool.imageEndSemaphore + i),NULL);
+
+  }
+
+  //delete vksystem->renderPool->imageCommandBuffer;
+  //delete vksystem->renderPool->imageFrameBuffer;
+
+  delete vksystem->renderPool.imageStartSemaphore;
+  delete vksystem->renderPool.imageEndSemaphore;
+  delete vksystem->renderPool.imageFence;
+
+
+};
+
+void vulkan_renderer::destroySwapchain(VkSystem *vksystem){
+
+  for(int i = 0 ; i < vksystem->renderPool.count ; i++){
+     vkDestroyFramebuffer(vksystem->virtualDevice,*(vksystem->renderPool.imageFrameBuffer + i),NULL);
+     vkDestroyImageView(vksystem->virtualDevice,*(vksystem->renderPool.imageView + 1),NULL); 
+  }
+
+   delete vksystem->renderPool.imageView;
+   delete vksystem->renderPool.image;
+
+  if(vksystem->surfaceSwapchain != VK_NULL_HANDLE){
+    vkDestroySwapchainKHR(vksystem->virtualDevice,vksystem->surfaceSwapchain,nullptr);
+  }
+};
+
+
+void vulkan_renderer::exit(){
+
+  destroySwapchain(&vksystem);
+
+  if(vksystem.renderPass != VK_NULL_HANDLE){
+    vkDestroyRenderPass(vksystem.virtualDevice,vksystem.renderPass,NULL);
+  }
+
+  if(vksystem.surface != VK_NULL_HANDLE){
+   vkDestroySurfaceKHR(vksystem.instance,vksystem.surface,nullptr);
+  }
+
+  if(vksystem.commandPool != VK_NULL_HANDLE){
+    vkDestroyCommandPool(vksystem.virtualDevice,vksystem.commandPool,NULL);
+  }
+    freeResource(&vksystem);
+  if(vksystem.virtualDevice != VK_NULL_HANDLE){
+    vkDestroyDevice(vksystem.virtualDevice,nullptr);
+  }
+  if(vksystem.instance != VK_NULL_HANDLE){
+    vkDestroyInstance(vksystem.instance,nullptr); 
+  }
+  
+  return;
+};
+
+void vulkan_renderer::showFrame(VkSystem *vksystem){
+
+  int currentFrame = 0;
+  VkFence lastFence = VK_NULL_HANDLE;
+  uint32_t imageIndex = 0;
+
+   while(1){
+
+     vkWaitForFences(vksystem->virtualDevice,1,&vksystem->renderPool.imageFence[currentFrame],1,UINT64_MAX);
+     vkAcquireNextImageKHR(vksystem->virtualDevice,vksystem->surfaceSwapchain,UINT64_MAX,vksystem->renderPool.imageStartSemaphore[currentFrame],NULL,&imageIndex);
+
+    if(lastFence != VK_NULL_HANDLE){
+      vkWaitForFences(vksystem->virtualDevice,1,&lastFence,1,UINT64_MAX);
+    }
+
+    lastFence = vksystem->renderPool.imageFence[currentFrame];
+    vkResetFences(vksystem->virtualDevice,1,&vksystem->renderPool.imageFence[currentFrame]);
+
+     create_struct(cmdbufferInfo,VkCommandBufferBeginInfo,
+                   .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+                   .pNext = NULL,
+                   .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT
+                   );
+     vkBeginCommandBuffer(*(vksystem->renderPool.imageCommandBuffer + currentFrame),&cmdbufferInfo);
+
+     VkClearValue clearVal = {{0.0f,1.0f,1.0f,1.0f}};
+
+    create_struct(rdrCmd,VkRenderPassBeginInfo,
+                  .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
+                  .pNext = NULL,
+                  .renderPass = vksystem->renderPass,
+                  .clearValueCount = 1,
+                  .pClearValues = &clearVal 
+                  );
+
+             rdrCmd.framebuffer = vksystem->renderPool.imageFrameBuffer[imageIndex],
+
+             rdrCmd.renderArea.offset.x = 0;
+             rdrCmd.renderArea.offset.y = 0;
+ 
+             rdrCmd.renderArea.extent.height = vksystem->requestedSurfaceHeight;
+             rdrCmd.renderArea.extent.width = vksystem->requestedSurfaceWidth;
+      
+       vkCmdBeginRenderPass(*(vksystem->renderPool.imageCommandBuffer + imageIndex ),&rdrCmd,VK_SUBPASS_CONTENTS_INLINE);
+       vkCmdEndRenderPass(*(vksystem->renderPool.imageCommandBuffer + imageIndex ));
+       vkEndCommandBuffer(*(vksystem->renderPool.imageCommandBuffer + imageIndex ));
+
+    const VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+
+    const VkPipelineStageFlags dstflag = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+
+    VkSubmitInfo submitInfo;
+        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submitInfo.pNext = NULL;
+        submitInfo.waitSemaphoreCount = 1;
+        submitInfo.pWaitSemaphores = &vksystem->renderPool.imageStartSemaphore[imageIndex];
+        submitInfo.commandBufferCount = 1;
+        submitInfo.pCommandBuffers = &vksystem->renderPool.imageCommandBuffer[imageIndex];
+        submitInfo.signalSemaphoreCount = 1;
+        submitInfo.pSignalSemaphores = &vksystem->renderPool.imageEndSemaphore[imageIndex];
+        submitInfo.pWaitDstStageMask = &dstflag;
+  
+       vkQueueSubmit(vksystem->graphicQueue,1,&submitInfo,vksystem->renderPool.imageFence[imageIndex]);
+       
+    VkPresentInfoKHR presentInfo;
+       presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+       presentInfo.pNext = NULL;
+       presentInfo.waitSemaphoreCount = 1;
+       presentInfo.pWaitSemaphores = &vksystem->renderPool.imageEndSemaphore[imageIndex];
+       presentInfo.swapchainCount = 1;
+       presentInfo.pSwapchains = &vksystem->surfaceSwapchain;
+       presentInfo.pImageIndices = &imageIndex;
+       presentInfo.pResults = NULL;
+
+     vkQueuePresentKHR(vksystem->graphicQueue,&presentInfo);
+     wl_display_roundtrip(vksystem->vulkan_wayland_display_ptr);
+    std::system("sleep 0.025s");
+
+    currentFrame = (currentFrame + 1) % vksystem->renderPool.count;
+   }
+};

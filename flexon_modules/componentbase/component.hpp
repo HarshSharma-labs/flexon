@@ -87,8 +87,8 @@ struct base_view {
 };
 
 typedef struct {
-  struct base_view relative_tree;
-  struct base_view absolute_tree;
+  struct base_view relative;
+  struct base_view absolute;
 } flexon_gui_tree;
 typedef struct base_view flexon_view;
 

@@ -77,15 +77,26 @@ typedef struct render {
     int start_semaphore_count = 0;
     int end_semaphore_count = 0;
   
-    VkDeviceMemory device_memory;
-    VkDeviceMemory staging_memory;
-    VkDeviceSize device_memory_size;
-    VkDeviceSize image_memory_size;
-    VkDeviceSize image_memory_alignment;
+    VkDeviceMemory device_memory = VK_NULL_HANDLE;
+    VkDeviceMemory staging_memory = VK_NULL_HANDLE;
+    VkDeviceMemory shader_data_memory = VK_NULL_HANDLE;
 
+    VkDeviceSize device_memory_size = 0;
+    VkDeviceSize image_memory_size = 0;
+    VkDeviceSize image_memory_alignment = 0;
+
+    VkShaderModule frag_shader_module = VK_NULL_HANDLE;
+    VkShaderModule vert_shader_module = VK_NULL_HANDLE;
     VkCommandBuffer *image_cmd_buffer = nullptr;
 
-    VkFormat image_format;
+    VkPipeline graphics_pipeline = VK_NULL_HANDLE;
+    VkPipelineLayout graphics_pipeline_layout = VK_NULL_HANDLE;
+    size_t vert_shader_size = 0;
+    size_t frag_shader_size = 0;
+    uint32_t *vert_shader_compiled_code = nullptr;
+    uint32_t *frag_shader_compiled_code = nullptr;
+
+    VkFormat image_format = VK_FORMAT_R8G8B8A8_SRGB;
     render_state state;
     render_frame_buffer *frame_buffer;
    
@@ -133,6 +144,9 @@ typedef struct VkSystem {
     wl_surface* vulkan_wayland_surface_ptr = nullptr;
     wl_display* vulkan_wayland_display_ptr = nullptr;
 
+    char *vertex_shader_code = nullptr;
+    char *fragment_shader_code = nullptr;
+
     const int device_extension_count = 1;
     const char* extension_name[1] = {
         VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
@@ -148,6 +162,7 @@ public:
         vksystem.vulkan_wayland_surface_ptr = surface;
         vksystem.vulkan_wayland_display_ptr = display;
         vksystem.render_pool.state.surface_pixel = pixels;
+      
     };
     void destroy_renderer();
     void render();
@@ -180,6 +195,7 @@ private:
 
     bool find_suitable_memory_properties(VkSystem* vksystem, VkMemoryPropertyFlags optimal_memory_type, uint32_t memory_type_bit_requirements);
 
+    bool load_shader(VkSystem *vksystem);
     bool create_instance(VkSystem* vksystem);
     bool select_physical_device(VkSystem* vksystem);
     bool get_queue(VkSystem* vksystem);
@@ -189,7 +205,8 @@ private:
     bool create_render_buffer(VkSystem* vksystem);
     bool create_render_resource(VkSystem* vksytem);
     bool create_staging_buffer(VkSystem* vksystem);
-    //  bool createGraphicsPipeline(VkSystem *vksystem);
+    bool create_shader_module(VkSystem* vksystem);
+    bool create_graphics_pipeline(VkSystem *vksystem);
     //  void destroy_graphics_pipeline(VkSystem *vksystem);
     //  void destroy_render_resource(VkSystem *vksystem);
     //  void destroy_render_buffer(VkSystem *vksystem);

@@ -10,7 +10,7 @@ find_package(Vulkan REQUIRED)
 # Set CMake export compile commands
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_BUILD_TYPE DEBUG)
-
+set(CMAKE_COMMAND glslc)
 set(ENGINE_NAME flexon)
 
 
@@ -22,7 +22,7 @@ include_directories(
     "${PROJECT_SOURCE_DIR}/flexon_modules/componentbase/*.hpp" 
     "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/*.hpp" 
     "${PROJECT_SOURCE_DIR}/flexon_modules/utilities/*.hpp" 
-    "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/renderer/*.hpp" 
+    "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/renderer/*.hpp"
     "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/windowManager/*.hpp" 
     "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/windowManager/*.h"
     "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/windowManager/*.hpp" 
@@ -38,6 +38,7 @@ file(GLOB SRCS_FILES
       "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/*.cpp"
       "${PROJECT_SOURCE_DIR}/flexon_modules/utilities/*.cpp" 
       "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/renderer/*.cpp" 
+
       "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/windowManager/*.cpp" 
       "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/windowManager/*.c" 
       "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/windowManager/keyboard/*.cpp" 
@@ -45,6 +46,7 @@ file(GLOB SRCS_FILES
 
 )
 
+set(VERTEX_COMMAND "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/renderer/shaders/vertex_shader.glsl") 
 # Add executable
 add_executable(${ENGINE_NAME} ${SRCS_FILES})
 

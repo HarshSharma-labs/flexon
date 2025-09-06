@@ -12,11 +12,71 @@ static VkDeviceSize align_offset(VkDeviceSize alignment, VkDeviceSize value)
 }
 
 void vulkan_renderer::allocate_required(VkSystem *vksystem){
-   
     vksystem->render_pool.frame_buffer = new render_frame_buffer[vksystem->render_pool.count];
-    vksystem->render_pool.image_cmd_buffer = new VkCommandBuffer[vksystem->render_pool.count];
-   
-     
+    vksystem->render_pool.image_cmd_buffer = new VkCommandBuffer[vksystem->render_pool.count];  
+};
+
+void vulkan_renderer::begin_shader_recording(VkSystem *vksystem,enum shader_type type){
+
+  if(vksystem->shader_record_state == nullptr ){
+   vksystem->shader_record_state = new vk_shader;
+  }else{
+    vksystem->shader_record_state->next = new vk_shader;
+    vksystem->shader_record_state = vksystem->shader_record_state->next; 
+  }
+  vksystem->shader_record_state->shader_type = type;
+
+  return;
+};
+
+void vulkan_renderer::begin_pipeline_recording(VkSystem *vksystem, enum pipeline_type type){
+  if(vksystem->pipeline_record_state == nullptr ){
+   vksystem->pipeline_record_state = new vk_pipeline;
+  }else{
+    vksystem->pipeline_record_state->next = new vk_pipeline;
+    vksystem->pipeline_record_state = vksystem->pipeline_record_state->next; 
+  }
+  vksystem->pipeline_record_state->type = type;
+};
+
+vk_pipeline* vulkan_renderer::end_pipeline_recording(VkSystem *vksystem){
+  return vksystem->pipeline_record_state;
+};
+
+bool vulkan_renderer::create_shader_module(VkSystem *vksystem){
+
+   create_struct(vert_module_create_info , VkShaderModuleCreateInfo,
+                 .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
+                 .pNext = NULL,
+                 .codeSize = vksystem->shader_record_state->code_size_vert,
+                 .pCode = vksystem->shader_record_state->compiled_code_vert
+                 );
+
+   create_struct(frag_module_create_info , VkShaderModuleCreateInfo,
+                 .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
+                 .pNext = NULL,
+                 .codeSize = vksystem->shader_record_state->code_size_frag,
+                 .pCode = vksystem->shader_record_state->compiled_code_frag
+                 );
+ 
+  vkCreateShaderModule(vksystem->virtual_device,&vert_module_create_info,
+                       NULL,&vksystem->shader_record_state->shader_vert);
+
+
+  vkCreateShaderModule(vksystem->virtual_device,&frag_module_create_info,
+                       NULL,&vksystem->shader_record_state->shader_frag);
+   std::cout<<vksystem->shader_record_state->code_size_frag<<std::endl;
+
+
+  return true;
+}
+
+vk_shader* vulkan_renderer::end_shader_recording(VkSystem *vksystem){
+
+  delete vksystem->shader_record_state->compiled_code_vert;
+  delete vksystem->shader_record_state->compiled_code_frag;
+
+  return vksystem->shader_record_state;
 };
 
 void vulkan_renderer::free_required(VkSystem *vksystem){
@@ -25,14 +85,19 @@ void vulkan_renderer::free_required(VkSystem *vksystem){
 };
 
 void vulkan_renderer::start_memory_recording(VkSystem *vksystem , enum memory_type usage){
+  if(vksystem->mem_record_state == nullptr ){
    vksystem->mem_record_state = new vk_memory;
+  }else{
+    vksystem->mem_record_state->next = new vk_memory;
+    vksystem->mem_record_state = vksystem->mem_record_state->next; 
+  }
    vksystem->mem_record_state->memory_usage = usage;
 };
 
 void vulkan_renderer::end_memory_recording(VkSystem *vksystem){
-  vksystem->render_pool.memory = vksystem->mem_record_state;
+
  
- int32_t mem_type_index = find_suitable_memory_properties(vksystem,
+  int32_t mem_type_index = find_suitable_memory_properties(vksystem,
                                                           vksystem->physical_device.required_memory_type,
                                                           vksystem->mem_record_state->memory_type_bit
                                                           );
@@ -47,7 +112,8 @@ void vulkan_renderer::end_memory_recording(VkSystem *vksystem){
                .memoryTypeIndex = (uint32_t)mem_type_index
                );
   
-  vkAllocateMemory(vksystem->virtual_device,&mem_layout_size_info,VK_NULL_HANDLE,&vksystem->mem_record_state->memory);
+  vkAllocateMemory(vksystem->virtual_device,&mem_layout_size_info,
+                   VK_NULL_HANDLE,&vksystem->mem_record_state->memory);
   for(vk_mem_layout *itr = vksystem->mem_record_state->memory_layout; itr != nullptr ; itr = itr->next){
     switch(itr->part_type){
       case MEM_PART_NOM_BUF:
@@ -68,19 +134,13 @@ void vulkan_renderer::end_memory_recording(VkSystem *vksystem){
     } 
   }
   
- vksystem->mem_record_state = nullptr;
-
   return;
 };
 
 void vulkan_renderer::initlise()
 {
        allocate_required(&vksystem);
-      if(!load_shader(&vksystem)){
-          std::cout<<"[SHADER COMPILATION] Failed to compile shader.\n";
-          return;
-        }
-        
+            
 #ifndef NDEBUG
     if (!checkValidationLayerSupport(validationLayer, &enableLayerCount)) {
         std::cout << "Validation Layer not supported aborting" << std::endl;
@@ -147,12 +207,12 @@ void vulkan_renderer::initlise()
         return;
     }
   
-    if(!create_shader_module(&vksystem)){
+    if(!create_shader(&vksystem)){
       std::cout<<"[SHADER] Creation of shader module failed\n";
       exit_vulkan(EXIT_LEVEL_RENDER_BUFFER,&vksystem);
       return;
     }
-    if(!create_graphics_pipeline(&vksystem)){
+    if(!create_pipeline(&vksystem)){
         std::cout << "[RENDER BUFFER] Creation of render buffer failed\n";
         exit_vulkan(EXIT_LEVEL_CMD_BUFFER, &vksystem);
         return; 
@@ -161,17 +221,18 @@ void vulkan_renderer::initlise()
     return;
 }
 
-bool vulkan_renderer::load_shader(VkSystem *vksystem){
+bool vulkan_renderer::load_shader(VkSystem *vksystem,const char *vtx_shader_code,const char *frag_shader_code){
 
    // unoptimised code
    // TODO: Optimise this code and remove depedency on class based abstracted function
    // just for normal compilation
 
-   size_t vertex_code_length = strlen(vertex_shader_code);
-   size_t fragment_code_length = strlen(fragment_shader_code);
+   size_t vertex_code_length = strlen(vtx_shader_code);
+   size_t fragment_code_length = strlen(frag_shader_code);
+  
    shaderc::CompileOptions shader_compiler_options;
    shaderc::Compiler shader_compiler;
-   shaderc::SpvCompilationResult vertex_shader_result = shader_compiler.CompileGlslToSpv(vertex_shader_code,
+   shaderc::SpvCompilationResult vertex_shader_result = shader_compiler.CompileGlslToSpv(vtx_shader_code,
                                                                                 vertex_code_length,
                                                                                 shaderc_glsl_vertex_shader,
                                                                                 "shader.vert",
@@ -186,16 +247,18 @@ bool vulkan_renderer::load_shader(VkSystem *vksystem){
      vert_size += 1;    
     }
   
-    vksystem->render_pool.vert_shader_size = vert_size * sizeof(uint32_t); //convert size to bytes;
-    vksystem->render_pool.vert_shader_compiled_code = new uint32_t[vert_size];
-   
+    uint32_t *itr_vert = new uint32_t[vert_size];
+
+    vksystem->shader_record_state->code_size_vert = vert_size * sizeof(uint32_t); //convert size to bytes;
+    vksystem->shader_record_state->compiled_code_vert = itr_vert;
+
    size_t index = 0;
    for(auto &iterator: vertex_shader_result){
-     vksystem->render_pool.vert_shader_compiled_code[index] = iterator;
+     itr_vert[index] = iterator;
      index += 1;
     }
    
-  shaderc::SpvCompilationResult frag_shader_result = shader_compiler.CompileGlslToSpv(fragment_shader_code,
+  shaderc::SpvCompilationResult frag_shader_result = shader_compiler.CompileGlslToSpv(frag_shader_code,
                                                                                 fragment_code_length,
                                                                                 shaderc_glsl_fragment_shader,
                                                                                 "shader.frag",
@@ -209,13 +272,15 @@ bool vulkan_renderer::load_shader(VkSystem *vksystem){
     for(auto &iterator: frag_shader_result){
      frag_size += 1;    
     }
-    
-    vksystem->render_pool.frag_shader_size = frag_size * sizeof(uint32_t); //convert size to bytes;
-    vksystem->render_pool.frag_shader_compiled_code = new uint32_t[frag_size];
+   
+    uint32_t *itr_frag = new uint32_t[frag_size];
+
+    vksystem->shader_record_state->code_size_frag = frag_size * sizeof(uint32_t); //convert size to bytes;
+    vksystem->shader_record_state->compiled_code_frag = itr_frag;
    
    size_t idx = 0;
    for(auto &iterator: frag_shader_result){
-     vksystem->render_pool.frag_shader_compiled_code[idx] = iterator;
+      itr_frag[idx] = iterator;
      idx += 1;
     }
     
@@ -422,19 +487,21 @@ bool vulkan_renderer::create_render_buffer(VkSystem *vksystem){
   };
 
   end_memory_recording(vksystem);
+
   for(int i = 0 ; i < vksystem->render_pool.count ; i++){
     VkImageView tmp_view = create_image_view(vksystem,vksystem->render_pool.frame_buffer[i].image);
     vksystem->render_pool.frame_buffer[i].image_view = tmp_view;
   };
-  void *data;
+
+  vksystem->render_pool.memory = vksystem->mem_record_state;
+
   vkMapMemory(vksystem->virtual_device,
               vksystem->render_pool.memory->memory,
               0,
               (vksystem->surface_width*vksystem->surface_height * 4),
               0,
-              &data);
+              (void**)(&(vksystem->state.raw_pixel)));
 
-  vksystem->state.raw_pixel = (uint32_t*)data;
    return true;
 };
 
@@ -473,22 +540,17 @@ void vulkan_renderer::exit_vulkan(enum exitlevel level, VkSystem* vksystem)
         switch (level) {
         case EXIT_LEVEL_ALL:
         case EXIT_LEVEL_GRAPHICS_PIPELINE:
-            //      destroy_graphics_pipeline(vksystem);
         case EXIT_LEVEL_RENDER_BUFFER:
-//            destroy_render_buffer(vksystem);
+             free_memory_resource(vksystem);
         case EXIT_LEVEL_RENDER_PASS:
-            //      destroy_render_pass(vksystem);
         case EXIT_LEVEL_CMD_BUFFER:
         case EXIT_LEVEL_CMD_POOL:
             vkDestroyCommandPool(vksystem->virtual_device,
                                  vksystem->cmd_pool, nullptr);
             if (vksystem->render_pool.image_cmd_buffer != nullptr)
                 delete vksystem->render_pool.image_cmd_buffer;
-
         case EXIT_LEVEL_RESOURCE:
             destroy_rendersync_resource(vksystem);
-
-
         case EXIT_LEVEL_QUEUE:
             delete vksystem->physical_device.Queue;
         case EXIT_LEVEL_VIRTUAL_DEVICE:
@@ -621,7 +683,7 @@ void vulkan_renderer::start_cmd_buffer(VkSystem *vksystem){
         .pColorAttachments = &color_attachment_info, );
 
     vkCmdBeginRendering(vksystem->state.current_cmd_buffer, &rendering_info);
-    vkCmdBindPipeline(vksystem->state.current_cmd_buffer,VK_PIPELINE_BIND_POINT_GRAPHICS,vksystem->render_pool.graphics_pipeline);
+    vkCmdBindPipeline(vksystem->state.current_cmd_buffer,VK_PIPELINE_BIND_POINT_GRAPHICS,vksystem->render_pool.pipeline->pipeline);
 
     VkViewport viewport{};
     viewport.x = 0.0f;
@@ -693,31 +755,35 @@ void vulkan_renderer::end_cmd_buffer(VkSystem *vksystem){
 
 };
 
-bool vulkan_renderer::create_shader_module(VkSystem* vksystem){
+bool vulkan_renderer::create_shader(VkSystem* vksystem){
 
+ begin_shader_recording(vksystem,VK_SHADER_VIEW);
 
-   create_struct(vert_module_create_info , VkShaderModuleCreateInfo,
-                 .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
-                 .pNext = NULL,
-                 .codeSize = vksystem->render_pool.vert_shader_size,
-                 .pCode = vksystem->render_pool.vert_shader_compiled_code
-                 );
-   create_struct(frag_module_create_info , VkShaderModuleCreateInfo,
-                 .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
-                 .pNext = NULL,
-                 .codeSize = vksystem->render_pool.frag_shader_size,
-                 .pCode = vksystem->render_pool.frag_shader_compiled_code
-                 );
- 
-  vkCreateShaderModule(vksystem->virtual_device,&vert_module_create_info,
-                       NULL,&vksystem->render_pool.vert_shader_module);
-  vkCreateShaderModule(vksystem->virtual_device,&frag_module_create_info,
-                       NULL,&vksystem->render_pool.frag_shader_module);
+ if(!load_shader(vksystem,vertex_shader_code,fragment_shader_code)){
+    return false;
+ }
+ if(!create_shader_module(vksystem)){
+    return false;
+  }
 
-return true;
+ vksystem->render_pool.shader =  end_shader_recording(vksystem);
+  
+ return true;
+  
 };
 
-bool vulkan_renderer::create_graphics_pipeline(VkSystem *vksystem){
+bool vulkan_renderer::create_pipeline(VkSystem *vksystem){
+  begin_pipeline_recording(vksystem,VK_PIPELINE_TYPE_PRIMARY);
+
+  if(!create_graphics_pipeline(vksystem , vksystem->render_pool.shader)){
+    return false;
+  }
+
+  vksystem->render_pool.pipeline = end_pipeline_recording(vksystem);
+  return true;
+};
+
+bool vulkan_renderer::create_graphics_pipeline(VkSystem *vksystem , vk_shader *which_shader){
  
    create_struct(pipeline_layout_info,VkPipelineLayoutCreateInfo,
                            .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
@@ -727,18 +793,18 @@ bool vulkan_renderer::create_graphics_pipeline(VkSystem *vksystem){
                            .pushConstantRangeCount = (uint32_t)0,
                            .pPushConstantRanges = nullptr,
                   );
-     if (vkCreatePipelineLayout(vksystem->virtual_device, &pipeline_layout_info, nullptr, &vksystem->render_pool.graphics_pipeline_layout) != VK_SUCCESS) {
+     if (vkCreatePipelineLayout(vksystem->virtual_device, &pipeline_layout_info, nullptr, &vksystem->pipeline_record_state->layout) != VK_SUCCESS) {
         std::cout<<"[PIPELINE] Layout Creation Failed\n";
         return false;
       }
 
 
-    VkPipelineShaderStageCreateInfo shader_stage[2];
+     VkPipelineShaderStageCreateInfo shader_stage[2];
      shader_stage[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
      shader_stage[0].pNext = NULL;
      shader_stage[0].flags = 0;
      shader_stage[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
-     shader_stage[0].module = vksystem->render_pool.vert_shader_module;
+     shader_stage[0].module = which_shader->shader_vert;
      shader_stage[0].pName = "main";
      shader_stage[0].pSpecializationInfo = NULL;
 
@@ -746,7 +812,7 @@ bool vulkan_renderer::create_graphics_pipeline(VkSystem *vksystem){
      shader_stage[1].pNext = NULL;
      shader_stage[1].flags = 0,
      shader_stage[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-     shader_stage[1].module = vksystem->render_pool.frag_shader_module;
+     shader_stage[1].module = which_shader->shader_frag;
      shader_stage[1].pName = "main";
      shader_stage[1].pSpecializationInfo = NULL;
 
@@ -759,6 +825,7 @@ bool vulkan_renderer::create_graphics_pipeline(VkSystem *vksystem){
                    .vertexAttributeDescriptionCount =(uint32_t)0, 
                    .pVertexAttributeDescriptions = NULL, 
                    );
+
      create_struct(input_assembly_state,VkPipelineInputAssemblyStateCreateInfo,
                   .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
                   .pNext = NULL ,
@@ -855,13 +922,13 @@ bool vulkan_renderer::create_graphics_pipeline(VkSystem *vksystem){
                   .pDepthStencilState = nullptr, 
                   .pColorBlendState = &color_blend_state_info, 
                   .pDynamicState = &pipeline_dynamic_state_info, 
-                  .layout = vksystem->render_pool.graphics_pipeline_layout, 
+                  .layout = vksystem->pipeline_record_state->layout, 
                   .renderPass = VK_NULL_HANDLE,
                   );
 
     vkCreateGraphicsPipelines(vksystem->virtual_device,VK_NULL_HANDLE,(uint32_t)1,
                              &graphics_pipeline_create_info
-                             ,VK_NULL_HANDLE,&vksystem->render_pool.graphics_pipeline);
+                             ,VK_NULL_HANDLE,&vksystem->pipeline_record_state->pipeline);
   return true;
 };
 
@@ -883,8 +950,6 @@ VkBuffer vulkan_renderer::create_buffer(VkSystem* vksystem , VkBufferUsageFlags 
     vksystem->mem_record_state->current = playout;
   }
   
-  
-
    create_struct(buffer_create_info,VkBufferCreateInfo,
                   .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
                   .pNext = NULL,
@@ -1003,3 +1068,25 @@ VkImageView vulkan_renderer::create_image_view(VkSystem *vksystem,VkImage which_
     return tmp_image_view;
 };
 
+void vulkan_renderer::free_memory_resource(VkSystem *vksystem){
+ for(vk_memory *itr_mem = vksystem->render_pool.memory; itr_mem != nullptr ; itr_mem = itr_mem->next){
+    for(vk_mem_layout *itr_lay = itr_mem->memory_layout; itr_lay != nullptr ; itr_lay = itr_lay->next){
+      switch(itr_lay->part_type){
+        case MEM_PART_NOM_BUF:
+          vkDestroyBuffer(vksystem->virtual_device,(VkBuffer)itr_lay->bind_member,NULL);
+       break;
+        case MEM_PART_IMAGE_BUF:
+          vkDestroyImage(vksystem->virtual_device,(VkImage)itr_lay->bind_member,NULL);
+        break;
+      };
+    }
+    vkFreeMemory(vksystem->virtual_device,itr_mem->memory,NULL);
+  }
+
+  vk_memory *itr_tmp = vksystem->render_pool.memory;
+  while(itr_tmp != nullptr){
+    vk_memory *itr_free = itr_tmp->next;
+    delete itr_tmp;
+    itr_tmp  = itr_free;
+  }
+};

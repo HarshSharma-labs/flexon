@@ -23,6 +23,7 @@ include_directories(
     "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/*.hpp" 
     "${PROJECT_SOURCE_DIR}/flexon_modules/utilities/*.hpp" 
     "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/renderer/*.hpp"
+    "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/renderer/shaders/*.hpp"
     "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/windowManager/*.hpp" 
     "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/windowManager/*.h"
     "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/windowManager/*.hpp" 
@@ -38,7 +39,7 @@ file(GLOB SRCS_FILES
       "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/*.cpp"
       "${PROJECT_SOURCE_DIR}/flexon_modules/utilities/*.cpp" 
       "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/renderer/*.cpp" 
-
+     "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/renderer/shaders/*.cpp"
       "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/windowManager/*.cpp" 
       "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/windowManager/*.c" 
       "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/windowManager/keyboard/*.cpp" 
@@ -51,6 +52,6 @@ set(VERTEX_COMMAND "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/renderer/shad
 add_executable(${ENGINE_NAME} ${SRCS_FILES})
 
 # Link libraries to the executable
-target_link_libraries(${ENGINE_NAME} ${WAYLAND_LIBRARIES} vulkan wayland-client rt)
+target_link_libraries(${ENGINE_NAME} ${WAYLAND_LIBRARIES} vulkan wayland-client rt shaderc_shared)
 
 

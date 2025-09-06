@@ -141,7 +141,7 @@ bool vulkan_renderer::find_suitable_queue_family(VkSystem* vksystem, physical_de
     return success;
 };
 
-bool vulkan_renderer::find_suitable_memory_properties(VkSystem *vksystem,VkMemoryPropertyFlags optimal_memory_type,uint32_t memory_type_bit_requirements){
+int32_t vulkan_renderer::find_suitable_memory_properties(VkSystem *vksystem,VkMemoryPropertyFlags optimal_memory_type,uint32_t memory_type_bit_requirements){
 
    create_struct(device_memory_info,VkPhysicalDeviceMemoryProperties);
    vkGetPhysicalDeviceMemoryProperties(vksystem->physical_device.device ,&device_memory_info);
@@ -158,28 +158,10 @@ bool vulkan_renderer::find_suitable_memory_properties(VkSystem *vksystem,VkMemor
 
     if(is_properties_found & is_memory_found){
        vksystem->physical_device.memory_type_index = i;
-       return true;
+       return (int32_t)i;
     }
   }
-  return false;
+  return -1;
 };
 
-bool vulkan_renderer::get_memory_requirements(VkSystem *vksystem){
-    create_struct(image_memory_info, VkMemoryRequirements); // size //alignments //memoryTypeBits
-    vkGetImageMemoryRequirements(vksystem->virtual_device,vksystem->render_pool.frame_buffer[0].image, &image_memory_info);
 
-    if (!find_suitable_memory_properties(vksystem, vksystem->physical_device.optimal_memory_flags, image_memory_info.memoryTypeBits)) {
-        std::cout << "[MEMORY] Device doesn't support the required memory flags Retrying..." << std::endl;
-        if (!find_suitable_memory_properties(vksystem, vksystem->physical_device.fallback_memory_type, image_memory_info.memoryTypeBits)) {
-            std::cout << "[MEMORY] Device support memory type required for working fallbacking to it " << std::endl;
-              return false;
-        } else {
-            std::cout << "[MEMORY] Device support memory type required for working fallbacking to it " << std::endl;
-            vksystem->render_pool.image_memory_size = image_memory_info.size;
-            vksystem->render_pool.image_memory_alignment = image_memory_info.alignment;
-         }
-    }
-
-
-  return true;
-};

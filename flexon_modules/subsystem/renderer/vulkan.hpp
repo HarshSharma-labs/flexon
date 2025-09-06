@@ -17,6 +17,26 @@
 #define create_struct(name, type, ...) \
     type name = (type) { __VA_ARGS__ }
 
+
+enum memory_type{
+ VK_MEMORY_TYPE_PRIMARY = 1,
+ VK_MEMORY_TYPE_SHADER,
+ VK_MEMORY_TYPE_TEXTURE,
+};
+
+enum memory_layout_type{
+  MEM_PART_NOM_BUF = 1,
+  MEM_PART_IMAGE_BUF,
+  MEM_PART_UNIFORM_BUF,
+  MEM_PART_VERTEX_BUF
+};
+
+enum shader_type{
+ VK_SHADER_VIEW = 1,
+ VK_SHADER_CIRCLE,
+};
+
+
 enum exitlevel {
     EXIT_LEVEL_ALL = 1,
     EXIT_LEVEL_GRAPHICS_PIPELINE,
@@ -42,7 +62,6 @@ typedef struct render_buffer{
     VkImageView image_view = VK_NULL_HANDLE;
     VkDeviceSize image_offset {0};
     sync_resource sync;
-
  }render_frame_buffer;
 
 
@@ -67,37 +86,71 @@ typedef struct render_state{
 
 }render_state;
 
+typedef struct vk_mem_layout{
+  struct vk_mem_layout *next = nullptr;
+  enum memory_layout_type part_type;
+  VkDeviceSize memory_offset = 0;
+  VkDeviceSize part_size = 0;
+  void *bind_member = nullptr;
+}vk_mem_layout;
+
+typedef struct vk_memory{
+
+  // define the purpose for which the memory will be used
+  enum memory_type memory_usage;
+  // vk_memory will be a linked list;
+  struct vk_memory *next = nullptr;  
+  // memory handle of the system
+  VkDeviceMemory memory = VK_NULL_HANDLE;
+  // defines the total memory size required by resource;
+  VkDeviceSize memory_size = 0;
+    // memory type bits of all entity combined
+  uint32_t memory_type_bit = 0;
+  //used to track the current layout and attach next to it;
+  vk_mem_layout *current = nullptr;
+  // memory layout depends on how much sub-allocation we want;
+  vk_mem_layout *memory_layout = nullptr;
+
+}vk_memory;
+
+typedef struct shaders_module{
+  struct shaders_module *next = nullptr;
+  enum shader_type shader_type;
+
+  VkShaderModule shader_vert = VK_NULL_HANDLE;
+  VkShaderModule shader_frag = VK_NULL_HANDLE;
+
+  size_t code_size_vert = 0;
+  size_t code_size_frag = 0;
+
+  uint32_t *compiled_code_frag = nullptr;
+  uint32_t *compiled_code_vert = nullptr;
+
+}shader_module;
+
 typedef struct render {
 
     uint32_t count {3};
-    int image_filled_count = 0;
-    int image_view_filled_count = 0;
-    int memory_count = 0;
-    int fence_count = 0;
-    int start_semaphore_count = 0;
-    int end_semaphore_count = 0;
-  
-    VkDeviceMemory device_memory = VK_NULL_HANDLE;
-    VkDeviceMemory staging_memory = VK_NULL_HANDLE;
-    VkDeviceMemory shader_data_memory = VK_NULL_HANDLE;
+ 
+    VkBuffer staging_buffer;
 
-    VkDeviceSize device_memory_size = 0;
-    VkDeviceSize image_memory_size = 0;
-    VkDeviceSize image_memory_alignment = 0;
-
+    vk_memory *memory;
+    VkCommandBuffer *image_cmd_buffer = nullptr;
     VkShaderModule frag_shader_module = VK_NULL_HANDLE;
     VkShaderModule vert_shader_module = VK_NULL_HANDLE;
-    VkCommandBuffer *image_cmd_buffer = nullptr;
-
+  
     VkPipeline graphics_pipeline = VK_NULL_HANDLE;
     VkPipelineLayout graphics_pipeline_layout = VK_NULL_HANDLE;
+    
+    // Mandantory to have one active shader
+    shader_module vkshaders;
     size_t vert_shader_size = 0;
     size_t frag_shader_size = 0;
     uint32_t *vert_shader_compiled_code = nullptr;
     uint32_t *frag_shader_compiled_code = nullptr;
 
     VkFormat image_format = VK_FORMAT_R8G8B8A8_SRGB;
-    render_state state;
+  
     render_frame_buffer *frame_buffer;
    
 
@@ -111,11 +164,7 @@ typedef struct physicalDeviceConf {
     uint32_t queue_family_index { 0 };
     uint32_t queue_count = 1;
     uint32_t memory_type_index = 0;
-    VkMemoryPropertyFlags optimal_memory_flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
-        | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
-        | VK_MEMORY_PROPERTY_HOST_CACHED_BIT
-        | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    VkMemoryPropertyFlags fallback_memory_type = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
+    VkMemoryPropertyFlags required_memory_type = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
         | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
         | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 
@@ -131,21 +180,22 @@ typedef struct VkSystem {
     uint32_t default_weight { 720 };
     uint32_t default_width { 1080 };
 
-    uint32_t requested_surface_height { 500 };
-    uint32_t requested_surface_width { 500 };
+    uint32_t surface_height { 500 };
+    uint32_t surface_width { 500 };
     bool vksystem_down = false;
+
+   
+    vk_memory *mem_record_state = nullptr;
 
     VkInstance instance = VK_NULL_HANDLE;
     VkDevice virtual_device = VK_NULL_HANDLE;
     physical_device_conf physical_device;
     VkCommandPool cmd_pool = VK_NULL_HANDLE;
     render render_pool;
+    render_state state;
 
     wl_surface* vulkan_wayland_surface_ptr = nullptr;
     wl_display* vulkan_wayland_display_ptr = nullptr;
-
-    char *vertex_shader_code = nullptr;
-    char *fragment_shader_code = nullptr;
 
     const int device_extension_count = 1;
     const char* extension_name[1] = {
@@ -157,11 +207,12 @@ typedef struct VkSystem {
 class vulkan_renderer {
 public:
     void initlise();
-    void mount_surface(wl_surface* surface, wl_display* display,uint32_t *pixels)
+    void mount_surface(wl_surface* surface, wl_display* display,
+                       uint32_t *pixels)
     {
         vksystem.vulkan_wayland_surface_ptr = surface;
         vksystem.vulkan_wayland_display_ptr = display;
-        vksystem.render_pool.state.surface_pixel = pixels;
+        vksystem.state.surface_pixel = pixels;
       
     };
     void destroy_renderer();
@@ -193,8 +244,31 @@ private:
         physical_device_conf* device_config,
         VkPhysicalDevice& phy_device);
 
-    bool find_suitable_memory_properties(VkSystem* vksystem, VkMemoryPropertyFlags optimal_memory_type, uint32_t memory_type_bit_requirements);
+     int32_t find_suitable_memory_properties(VkSystem* vksystem,
+                                         VkMemoryPropertyFlags optimal_memory_type, 
+                                         uint32_t memory_type_bit_requirements);
+    
+    void allocate_required(VkSystem *vksystem);
+    void free_required(VkSystem *vksystem);
+ 
+    void start_memory_recording(VkSystem *vksystem, 
+                                enum memory_type usage);
 
+    // memory is allocated here;
+    void end_memory_recording(VkSystem *vksystem);
+ 
+    VkBuffer create_buffer(VkSystem* vksystem , VkBufferUsageFlags usage_mode,
+                           VkBufferCreateFlags flags,VkDeviceSize size);
+
+    //offset defines index of buffer in vk_memory.
+    void bind_memory(VkBuffer &buffer,int offset);
+
+    VkImage create_image(VkSystem* vksytem,uint32_t height,uint32_t width);
+    VkImageView create_image_view(VkSystem *vksystem,VkImage which_image);
+
+
+  
+      
     bool load_shader(VkSystem *vksystem);
     bool create_instance(VkSystem* vksystem);
     bool select_physical_device(VkSystem* vksystem);
@@ -202,26 +276,17 @@ private:
     bool create_virtual_device(VkSystem* vksystem);
     bool create_cmd_pool(VkSystem* vksystem);
     bool create_cmd_buffer(VkSystem* vksystem);
-    bool create_render_buffer(VkSystem* vksystem);
-    bool create_render_resource(VkSystem* vksytem);
-    bool create_staging_buffer(VkSystem* vksystem);
+    bool create_rendersync_resource(VkSystem *vksystem); 
+    bool create_render_buffer(VkSystem *vksystem);  
     bool create_shader_module(VkSystem* vksystem);
     bool create_graphics_pipeline(VkSystem *vksystem);
     //  void destroy_graphics_pipeline(VkSystem *vksystem);
-    //  void destroy_render_resource(VkSystem *vksystem);
-    //  void destroy_render_buffer(VkSystem *vksystem);
-    //  void destroy_render_pass(VkSystem *vksystem);
-    //  void destroy_cmd_buffer(VkSystem *vksystem);
-    //  void destroy_cmd_pool(VkSystem *vksystem);
-    //  void destroy_queue_ptr(VkSystem *vksystem);
-    //  void destroy_virtual_device(VkSystem *vksystem);
-    //  void destroy_instance(VkSystem *vksystem);
-    void destroy_render_resource(VkSystem* vksystem);
+    void destroy_rendersync_resource(VkSystem* vksystem);
+
     void destroy_render_buffer(VkSystem* vksystem);
     void exit_vulkan(enum exitlevel level, VkSystem* vksystem);
 
-    bool get_memory_requirements(VkSystem *vksystem);
-
+   
     void transition_layout(VkSystem *vksystem);
     void toggle_state(VkSystem *vksystem);
     void render_frame(VkSystem* vksystem);

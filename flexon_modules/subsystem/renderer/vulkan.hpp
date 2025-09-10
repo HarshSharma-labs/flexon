@@ -22,15 +22,26 @@ extern bool vksystem_down;
 
 enum memory_type{
  VK_MEMORY_TYPE_PRIMARY = 1,
+ VK_MEMORY_TYPE_PRIMARY_MAPPED,
+
  VK_MEMORY_TYPE_SHADER,
+ VK_MEMORY_TYPE_SHADER_MAPPED,
+
  VK_MEMORY_TYPE_TEXTURE,
+ VK_MEMORY_TYPE_TEXTURE_MAPPED,
+
 };
 
 enum memory_layout_type{
+
   MEM_PART_NOM_BUF = 1,
+
   MEM_PART_IMAGE_BUF,
+
   MEM_PART_UNIFORM_BUF,
-  MEM_PART_VERTEX_BUF
+  MEM_PART_VERTEX_BUF,
+  MEM_PART_INDEXED_BUF,
+
 };
 
 enum shader_type{
@@ -67,22 +78,39 @@ typedef struct render_buffer{
  }render_frame_buffer;
 
 
+typedef struct shader_input{
+
+ uint32_t vertex_stride {0}; 
+ uint32_t uniform_stride {0};
+ uint32_t indexbuffer_stride {0};
+
+ size_t vertex_size {0};
+ size_t uniform_size {0};
+ size_t indexbuffer_size {0};
+ VkBuffer vertex_buffer;
+ void *vertex_data = nullptr;
+ void *uniform_data = nullptr;
+ void *index_data = nullptr;
+
+}shader_input;
 
 typedef struct vk_shader{
 
   enum shader_type shader_type;
-
-  struct vk_shader *next = nullptr;
-
+  
   uint32_t *compiled_code_frag = nullptr;
   uint32_t *compiled_code_vert = nullptr;
+
+  shader_input input;
+
+  struct vk_shader *next = nullptr;
 
   VkShaderModule shader_vert = VK_NULL_HANDLE;
   VkShaderModule shader_frag = VK_NULL_HANDLE;
 
   size_t code_size_vert = 0;
   size_t code_size_frag = 0;
-
+  
  
 }vk_shader;
 
@@ -106,6 +134,7 @@ typedef struct render_state{
   render_frame_buffer fb;
 
   vk_shader *shader = nullptr;
+  
   VkPipeline pipeline = VK_NULL_HANDLE;
   VkBuffer cpy_buffer = VK_NULL_HANDLE;
   VkCommandBuffer current_cmd_buffer;
@@ -135,11 +164,10 @@ typedef struct vk_memory{
   VkDeviceMemory memory = VK_NULL_HANDLE;
   // defines the total memory size required by resource;
   VkDeviceSize memory_size = 0;
-   //used to track the current layout and attach next to it;
+  //used to track the current layout and attach next to it;
   vk_mem_layout *current = nullptr;
   // memory layout depends on how much sub-allocation we want;
   vk_mem_layout *memory_layout = nullptr;
-
 
 }vk_memory;
 
@@ -162,8 +190,11 @@ typedef struct vk_pipeline{
 typedef struct pipeline_info{
    enum shader_type stype; // shader type
    enum pipeline_type ptype; // pipeline type
-   char *vtx_code;
-   char *frag_code;
+  
+   shader_input input;
+   char *vtx_code = nullptr;
+   char *frag_code = nullptr;
+
 }pipeline_info;
 
 
@@ -212,8 +243,7 @@ typedef struct VkSystem {
     uint32_t surface_width { 500 };
     const int device_extension_count = 1;
 
- 
-   
+  
     vk_memory *mem_record_state = nullptr;
     vk_shader *shader_record_state = nullptr;
     vk_pipeline *pipeline_record_state = nullptr;
@@ -235,7 +265,14 @@ typedef struct VkSystem {
 
 } VkSystem;
 
-class vulkan_renderer {
+typedef struct buffer_create_info{
+  enum memory_layout_type layout_type;
+  VkBufferUsageFlags usage_mode {0};
+  VkBufferCreateFlags flags {0};
+  VkDeviceSize size {0};
+}buffer_create_info;
+
+class flexon_vulkan_renderer {
 public:
     void initlise();
     void mount_surface(wl_surface* surface, wl_display* display,
@@ -288,14 +325,16 @@ private:
     // memory is allocated here;
     void end_memory_recording(VkSystem *vksystem);
 
+
     void begin_shader_recording(VkSystem *vksystem,enum shader_type type);
-    bool load_shader(VkSystem *vksystem,const char *vtx_shader_code, const char *frag_shader_code);
+    bool load_shader(VkSystem *vksystem,const char *vtx_shader_code,
+                     const char *frag_shader_code);
+
     bool create_shader_module(VkSystem *vksystem);
     vk_shader* end_shader_recording(VkSystem *vksystem);
 
     void free_memory_resource(VkSystem *vksystem); 
-    VkBuffer create_buffer(VkSystem* vksystem , VkBufferUsageFlags usage_mode,
-                           VkBufferCreateFlags flags,VkDeviceSize size);
+    VkBuffer create_buffer(VkSystem* vksystem ,buffer_create_info *info);
 
     VkImage create_image(VkSystem* vksytem,uint32_t height,uint32_t width);
     VkImageView create_image_view(VkSystem *vksystem,VkImage which_image);

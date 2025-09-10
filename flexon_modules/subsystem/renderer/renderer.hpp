@@ -5,7 +5,7 @@
 
 #if defined(RENDERER_VULKAN)
 #include "./vulkan.hpp"
- #define RENDERER_CLASS vulkan_renderer
+ #define RENDERER_CLASS flexon_vulkan_renderer
 #endif
 
 

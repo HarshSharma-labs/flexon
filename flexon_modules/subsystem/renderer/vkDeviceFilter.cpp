@@ -1,7 +1,7 @@
 #include "vulkan.hpp"
 
 #ifndef NDEBUG
-bool vulkan_renderer::checkValidationLayerSupport(const char** layerName, const int* count)
+bool flexon_vulkan_renderer::checkValidationLayerSupport(const char** layerName, const int* count)
 {
 
     uint32_t layersCount { 0 };
@@ -27,7 +27,7 @@ bool vulkan_renderer::checkValidationLayerSupport(const char** layerName, const 
 
 #endif
 
-bool vulkan_renderer::filter_physical_device(VkSystem* vksystem, std::vector<VkPhysicalDevice>& devices_list)
+bool flexon_vulkan_renderer::filter_physical_device(VkSystem* vksystem, std::vector<VkPhysicalDevice>& devices_list)
 {
 
     std::multimap<int, physical_device_conf> sorted_device;
@@ -46,7 +46,7 @@ bool vulkan_renderer::filter_physical_device(VkSystem* vksystem, std::vector<VkP
     return false;
 }
 
-int vulkan_renderer::score_device(VkSystem* vksystem, physical_device_conf* device_conf, VkPhysicalDevice which_device)
+int flexon_vulkan_renderer::score_device(VkSystem* vksystem, physical_device_conf* device_conf, VkPhysicalDevice which_device)
 {
 
     int evaluated_score = 0;
@@ -115,7 +115,7 @@ int vulkan_renderer::score_device(VkSystem* vksystem, physical_device_conf* devi
     return evaluated_score;
 }
 
-bool vulkan_renderer::find_suitable_queue_family(VkSystem* vksystem, physical_device_conf* device_config, VkPhysicalDevice& phy_device)
+bool flexon_vulkan_renderer::find_suitable_queue_family(VkSystem* vksystem, physical_device_conf* device_config, VkPhysicalDevice& phy_device)
 {
 
     uint32_t queue_family_count = 0;
@@ -141,7 +141,7 @@ bool vulkan_renderer::find_suitable_queue_family(VkSystem* vksystem, physical_de
     return success;
 };
 
-int32_t vulkan_renderer::find_suitable_memory_properties(VkSystem *vksystem,VkMemoryPropertyFlags optimal_memory_type,uint32_t memory_type_bit_requirements){
+int32_t flexon_vulkan_renderer::find_suitable_memory_properties(VkSystem *vksystem,VkMemoryPropertyFlags optimal_memory_type,uint32_t memory_type_bit_requirements){
 
    create_struct(device_memory_info,VkPhysicalDeviceMemoryProperties);
    vkGetPhysicalDeviceMemoryProperties(vksystem->physical_device.device ,&device_memory_info);

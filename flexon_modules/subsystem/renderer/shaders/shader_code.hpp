@@ -6,12 +6,12 @@
 extern const char *vertex_shader_code;
 extern const char *fragment_shader_code;
 
-typedef struct entity_rectangle_vertices{
+typedef struct rectangle_vertices{
   glm::vec2 top_right;
   glm::vec2 top_left;
   glm::vec2 bottom_left;
   glm::vec2 bottom_right;
-}entity_rectangle_vertices;
+}rect_vrt;
 
 #endif
 

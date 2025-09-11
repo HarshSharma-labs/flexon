@@ -5,6 +5,9 @@
 
 bool vksystem_down = false;
 
+const uint32_t indexed_data[] = {0, 1, 2, 2, 3, 0};
+const uint32_t indexed_data1[] = {4, 5, 6, 6, 7, 4};
+
 static VkDeviceSize align_offset(VkDeviceSize alignment, VkDeviceSize value)
 {
     if (alignment == 0)
@@ -14,6 +17,7 @@ static VkDeviceSize align_offset(VkDeviceSize alignment, VkDeviceSize value)
 
 void flexon_vulkan_renderer::allocate_required(VkSystem* vksystem)
 {
+   
     vksystem->render_pool.frame_buffer = new render_frame_buffer[vksystem->render_pool.count];
     vksystem->render_pool.image_cmd_buffer = new VkCommandBuffer[vksystem->render_pool.count];
 };
@@ -35,6 +39,16 @@ void flexon_vulkan_renderer::begin_shader_recording(VkSystem* vksystem, enum sha
 void flexon_vulkan_renderer::begin_pipeline_recording(VkSystem* vksystem, pipeline_info *info)
 {
 
+   static struct {
+    VkBuffer *vtx_buf;
+    VkBuffer *frg_buf;
+    VkBuffer *idx_buf;
+    void *vtx_data;
+    void *frg_data;
+    void *idx_data;
+  }aux;
+
+    
     if (vksystem->pipeline_record_state == nullptr) {
         vksystem->pipeline_record_state = new vk_pipeline;
     } else {
@@ -53,7 +67,13 @@ void flexon_vulkan_renderer::begin_pipeline_recording(VkSystem* vksystem, pipeli
     }
 
     vksystem->pipeline_record_state->shader = end_shader_recording(vksystem);
-    memcpy(&vksystem->shader_record_state->input, &info->input, sizeof(shader_input)); 
+
+    aux.vtx_buf = &vksystem->pipeline_record_state->shader->input.vertex_buffer;
+    aux.frg_buf = &vksystem->pipeline_record_state->shader->input.uniform_buffer;
+    aux.idx_buf = &vksystem->pipeline_record_state->shader->input.index_buffer;
+    
+
+    memcpy(&vksystem->shader_record_state->input, &info->input, sizeof(shader_input));    
 
     start_memory_recording(vksystem,VK_MEMORY_TYPE_SHADER_MAPPED);
 
@@ -63,7 +83,8 @@ void flexon_vulkan_renderer::begin_pipeline_recording(VkSystem* vksystem, pipeli
      .flags = 0,
      .size = vksystem->pipeline_record_state->shader->input.vertex_size
     };
-  vksystem->pipeline_record_state->shader->input.vertex_buffer = create_buffer(vksystem,&buffer_info_vertex);
+
+    *aux.vtx_buf = create_buffer(vksystem,&buffer_info_vertex);
 
     buffer_create_info buffer_info_indexed = {
      .layout_type = MEM_PART_INDEXED_BUF,
@@ -71,7 +92,8 @@ void flexon_vulkan_renderer::begin_pipeline_recording(VkSystem* vksystem, pipeli
      .flags = 0,
      .size = vksystem->pipeline_record_state->shader->input.vertex_size
     };
-    create_buffer(vksystem,&buffer_info_indexed);
+
+    *aux.idx_buf = create_buffer(vksystem,&buffer_info_indexed);
 
 
     buffer_create_info buffer_info_uniform = {
@@ -96,16 +118,22 @@ void flexon_vulkan_renderer::begin_pipeline_recording(VkSystem* vksystem, pipeli
    for(auto *itr = vksystem->mem_record_state->memory_layout ; itr != nullptr ; itr = itr->next){
         switch(itr->part_type){
           case MEM_PART_VERTEX_BUF:
-          vksystem->shader_record_state->input.vertex_data = mapped_data + itr->memory_offset;
+          aux.vtx_data = mapped_data + itr->memory_offset;
           break;
           case MEM_PART_UNIFORM_BUF:
-          vksystem->shader_record_state->input.uniform_data = mapped_data + itr->memory_offset;
+          aux.frg_data = mapped_data + itr->memory_offset;
           break;
           case MEM_PART_INDEXED_BUF:
-          vksystem->shader_record_state->input.index_data = mapped_data + itr->memory_offset;
-          break;
+          aux.idx_data = mapped_data + itr->memory_offset;
+         break;
        }
     }
+
+    vksystem->pipeline_record_state->shader->input.vertex_data = aux.vtx_data;
+    vksystem->pipeline_record_state->shader->input.uniform_data = aux.frg_data;
+    vksystem->pipeline_record_state->shader->input.index_data = aux.idx_data;
+
+
 };
 
 vk_pipeline* flexon_vulkan_renderer::end_pipeline_recording(VkSystem* vksystem)
@@ -162,6 +190,11 @@ void flexon_vulkan_renderer::start_memory_recording(VkSystem* vksystem, enum mem
 void flexon_vulkan_renderer::end_memory_recording(VkSystem* vksystem)
 {
 
+   static struct{
+    VkDeviceMemory *mem;
+   }info;
+   info.mem = &vksystem->mem_record_state->memory;
+
     int32_t mem_type_index = find_suitable_memory_properties(vksystem,
         vksystem->physical_device.required_memory_type,
         vksystem->mem_record_state->memory_type_bit);
@@ -176,7 +209,7 @@ void flexon_vulkan_renderer::end_memory_recording(VkSystem* vksystem)
         .memoryTypeIndex = (uint32_t)mem_type_index);
 
     vkAllocateMemory(vksystem->virtual_device, &mem_layout_size_info,
-        VK_NULL_HANDLE, &vksystem->mem_record_state->memory);
+        VK_NULL_HANDLE, info.mem);
 
     for (auto *itr = vksystem->mem_record_state->memory_layout; itr != nullptr; itr = itr->next) {
         switch (itr->part_type) {
@@ -187,14 +220,14 @@ void flexon_vulkan_renderer::end_memory_recording(VkSystem* vksystem)
             std::cout << "[INFO] MEM buffer binding request found" << std::endl;
             vkBindBufferMemory(vksystem->virtual_device,
                 (VkBuffer)itr->bind_member,
-                vksystem->mem_record_state->memory,
+                *info.mem,
                 itr->memory_offset);
             break;
         case MEM_PART_IMAGE_BUF:
             std::cout << "[INFO] MEM image binding request found" << std::endl;
             vkBindImageMemory(vksystem->virtual_device,
                 (VkImage)itr->bind_member,
-                vksystem->mem_record_state->memory,
+                 *info.mem,
                 itr->memory_offset);
 
          break;
@@ -619,11 +652,13 @@ void flexon_vulkan_renderer::render_frame(VkSystem* vksystem)
     if (vkWaitForFences(vksystem->virtual_device, 1, &vksystem->state.fb.sync.image_fence, 1, UINT64_MAX) == VK_SUCCESS) {
     }
 
+  /*
     for (int i = 0; i < (500 * 500); i++) {
         vksystem->state.surface_pixel[i] = vksystem->state.raw_pixel[i];
     }
     wl_surface_damage(vksystem->vulkan_wayland_surface_ptr, 0, 0, 500, 500);
     wl_surface_commit(vksystem->vulkan_wayland_surface_ptr);
+  */
 };
 
 void flexon_vulkan_renderer::toggle_state(VkSystem* vksystem)
@@ -642,28 +677,75 @@ void flexon_vulkan_renderer::toggle_state(VkSystem* vksystem)
     return;
 };
 
-void flexon_vulkan_renderer::transition_layout(VkSystem* vksystem)
+void flexon_vulkan_renderer::transition_layout_start(VkSystem* vksystem)
 {
+  static struct {
+    uint32_t queueidx;
+   }info;
+
+   info.queueidx = vksystem->physical_device.queue_family_index; 
+
 
     create_struct(barrier_info, VkImageMemoryBarrier,
         .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
-        .oldLayout = vksystem->state.initial_layout,
-        .newLayout = vksystem->state.final_layout,
-        .srcQueueFamilyIndex = vksystem->physical_device.queue_family_index,
-        .dstQueueFamilyIndex = vksystem->physical_device.queue_family_index,
+        .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+        .newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+        .srcQueueFamilyIndex = info.queueidx,
+        .dstQueueFamilyIndex = info.queueidx,
         .image = vksystem->state.fb.image,
         .subresourceRange = {
             .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
             .baseMipLevel = (uint32_t)0,
             .levelCount = (uint32_t)1,
             .baseArrayLayer = (uint32_t)0,
-            .layerCount = (uint32_t)1 }, );
-    barrier_info.srcAccessMask = vksystem->state.src_access_flag;
-    barrier_info.dstAccessMask = vksystem->state.dst_access_flag;
+            .layerCount = (uint32_t)1 }
+            );
+
+    barrier_info.srcAccessMask = 0;
+    barrier_info.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
     vkCmdPipelineBarrier(
         vksystem->state.current_cmd_buffer,
-        vksystem->state.src_stage_mask,
-        vksystem->state.dst_stage_mask,
+        VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+        0,
+        0, nullptr,
+        0, nullptr,
+        1, &barrier_info);
+
+    return;
+};
+
+void flexon_vulkan_renderer::transition_layout_end(VkSystem* vksystem)
+{
+  static struct {
+    uint32_t queueidx;
+   }info;
+
+   info.queueidx = vksystem->physical_device.queue_family_index; 
+
+    create_struct(barrier_info, VkImageMemoryBarrier,
+        .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+        .oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+        .newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+        .srcQueueFamilyIndex = info.queueidx,
+        .dstQueueFamilyIndex = info.queueidx,
+        .image = vksystem->state.fb.image,
+        .subresourceRange = {
+            .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+            .baseMipLevel = (uint32_t)0,
+            .levelCount = (uint32_t)1,
+            .baseArrayLayer = (uint32_t)0,
+            .layerCount = (uint32_t)1 }
+            );
+
+    barrier_info.srcAccessMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    barrier_info.dstAccessMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
+
+    vkCmdPipelineBarrier(
+        vksystem->state.current_cmd_buffer,
+        VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+        VK_PIPELINE_STAGE_TRANSFER_BIT,
         0,
         0, nullptr,
         0, nullptr,
@@ -674,36 +756,30 @@ void flexon_vulkan_renderer::transition_layout(VkSystem* vksystem)
 
 void flexon_vulkan_renderer::start_cmd_buffer(VkSystem* vksystem)
 {
+  vksystem->state.shader = vksystem->render_pool.pipeline->shader;
+
+  static struct {
+    VkCommandBuffer cmd;
+    VkImageView view;
+    VkPipeline pipeline;
+  }info;
+
+  info.cmd = vksystem->state.current_cmd_buffer;
+  info.view = vksystem->state.fb.image_view;
+  info.pipeline = vksystem->render_pool.pipeline->pipeline;
+
     create_struct(cmd_buffer_info, VkCommandBufferBeginInfo,
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
         .pNext = NULL,
         .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
-   entity_rectangle_vertices test = {
-    {0.0f,-0.5f},
-    {0.5f,0.5f},
-    {-0.5f,0.5f},
-    };
-
-  vksystem->state.shader = vksystem->render_pool.pipeline->shader;
-    memcpy(vksystem->state.shader->input.vertex_data, &test , sizeof(entity_rectangle_vertices));
-    vkBeginCommandBuffer(vksystem->state.current_cmd_buffer, &cmd_buffer_info);
-
-    vksystem->state.src_stage_mask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-    vksystem->state.dst_stage_mask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-
-    vksystem->state.initial_layout = VK_IMAGE_LAYOUT_UNDEFINED;
-    vksystem->state.final_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-    vksystem->state.src_access_flag = 0;
-    vksystem->state.dst_access_flag = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-
-    transition_layout(vksystem);
+    vkBeginCommandBuffer(info.cmd, &cmd_buffer_info);
+    transition_layout_start(vksystem);
 
     create_struct(color_attachment_info, VkRenderingAttachmentInfo,
         .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
         .pNext = NULL,
-        .imageView = vksystem->state.fb.image_view,
+        .imageView = info.view,
         .imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
         .resolveMode = VK_RESOLVE_MODE_NONE,
         .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
@@ -718,12 +794,17 @@ void flexon_vulkan_renderer::start_cmd_buffer(VkSystem* vksystem)
                 .x = 0,
                 .y = 0 },
             .extent = { .width = vksystem->surface_width, .height = vksystem->surface_height } },
-        .layerCount = (uint32_t)1, .viewMask = (uint32_t)0, .colorAttachmentCount = (uint32_t)1, .pColorAttachments = &color_attachment_info, );
+        .layerCount = (uint32_t)1,
+        .viewMask = (uint32_t)0,
+        .colorAttachmentCount = (uint32_t)1, 
+        .pColorAttachments = &color_attachment_info
+                  );
 
-    vkCmdBeginRendering(vksystem->state.current_cmd_buffer, &rendering_info);
-    vkCmdBindPipeline(vksystem->state.current_cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vksystem->render_pool.pipeline->pipeline);
-VkDeviceSize offsets[] = {0};
-    vkCmdBindVertexBuffers(vksystem->state.current_cmd_buffer, 0, 1,&vksystem->state.shader->input.vertex_buffer, offsets);
+    vkCmdBeginRendering(info.cmd, &rendering_info);
+    vkCmdBindPipeline(info.cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, info.pipeline);
+    VkDeviceSize offsets[] = {0};
+    vkCmdBindVertexBuffers(info.cmd, 0, 1,&vksystem->state.shader->input.vertex_buffer, offsets);
+    vkCmdBindIndexBuffer(info.cmd,vksystem->state.shader->input.index_buffer, 0,VK_INDEX_TYPE_UINT32);
 
     VkViewport viewport {};
     viewport.x = 0.0f;
@@ -732,30 +813,22 @@ VkDeviceSize offsets[] = {0};
     viewport.height = static_cast<float>(vksystem->surface_height);
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
-    vkCmdSetViewport(vksystem->state.current_cmd_buffer, 0, 1, &viewport);
+    vkCmdSetViewport(info.cmd, 0, 1, &viewport);
 
     VkRect2D scissor {};
     scissor.offset = { 0, 0 };
     scissor.extent = { 500, 500 };
-    vkCmdSetScissor(vksystem->state.current_cmd_buffer, 0, 1, &scissor);
-    vkCmdDraw(vksystem->state.current_cmd_buffer,(uint32_t)sizeof(test) , 1, 0, 0);
+    vkCmdSetScissor(info.cmd, 0, 1, &scissor);
+    vkCmdDrawIndexed(info.cmd,12, 1, 0, 0, 0);
     return;
+
 };
 
 void flexon_vulkan_renderer::end_cmd_buffer(VkSystem* vksystem)
 {
     vkCmdEndRendering(vksystem->state.current_cmd_buffer);
 
-    vksystem->state.src_stage_mask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-    vksystem->state.dst_stage_mask = VK_PIPELINE_STAGE_TRANSFER_BIT;
-
-    vksystem->state.initial_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    vksystem->state.final_layout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-
-    vksystem->state.src_access_flag = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    vksystem->state.dst_access_flag = VK_PIPELINE_STAGE_TRANSFER_BIT;
-
-    transition_layout(vksystem);
+    transition_layout_end(vksystem);
 
     VkBufferImageCopy region {};
     region.bufferOffset = 0;
@@ -806,9 +879,12 @@ bool flexon_vulkan_renderer::create_pipeline(VkSystem* vksystem)
     info.frag_code = (char*)fragment_shader_code;
 
     info.input.vertex_stride = (uint32_t)sizeof(glm::vec2);
-    //info.input.uniform_stride = (uint32_t)sizeof(entity_rectangle_uniform);
-    info.input.vertex_size = sizeof(glm::vec2) * 3;
-   // info.input.uniform_size = sizeof(entity_rectangle_uniform);
+    info.input.uniform_stride = (uint32_t)sizeof(uint32_t);
+    info.input.vertex_size = sizeof(glm::vec2) * 8;
+    info.input.uniform_size = sizeof(glm::vec2);
+    
+    info.input.indexbuffer_size =  sizeof(indexed_data) * 2;
+    info.input.indexbuffer_stride = sizeof(uint32_t);
  
 
     begin_pipeline_recording(vksystem, &info);

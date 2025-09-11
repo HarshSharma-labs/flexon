@@ -37,6 +37,9 @@ struct windowWaylandData {
 
 class waylandWM {
 public:
+    void thread_hello(){
+    std::cout<<"[hello harsh] Thread speaking"<<std::endl;
+    }; 
     void create(const char* name);
     void destroy();
     void dispatchEvent();

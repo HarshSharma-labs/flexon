@@ -87,7 +87,11 @@ typedef struct shader_input{
  size_t vertex_size {0};
  size_t uniform_size {0};
  size_t indexbuffer_size {0};
+
  VkBuffer vertex_buffer;
+ VkBuffer uniform_buffer;
+ VkBuffer index_buffer;
+
  void *vertex_data = nullptr;
  void *uniform_data = nullptr;
  void *index_data = nullptr;
@@ -283,6 +287,9 @@ public:
         vksystem.state.surface_pixel = pixels;
       
     };
+    void commit_render_request();
+
+   
     void destroy_renderer();
     void render();
 
@@ -360,7 +367,8 @@ private:
     void exit_vulkan(enum exitlevel level, VkSystem* vksystem);
     void free_pipeline_resource(VkSystem *vksystem);
    
-    void transition_layout(VkSystem *vksystem);
+    void transition_layout_start(VkSystem *vksystem);
+    void transition_layout_end(VkSystem *vksystem);
     void toggle_state(VkSystem *vksystem);
     void render_frame(VkSystem* vksystem);
     void lets_see(VkSystem* vksystem);

@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 project(flexon)
 
-set(OpenGL_GL_PREFERENCE LEGACY)
 # Find required packages
 find_package(Vulkan REQUIRED)
 
@@ -28,6 +27,7 @@ include_directories(
     "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/windowManager/*.h"
     "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/windowManager/*.hpp" 
     "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/windowManager/xdg/*.cpp" 
+    "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/threads/*.hpp" 
 
 
 )
@@ -39,11 +39,12 @@ file(GLOB SRCS_FILES
       "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/*.cpp"
       "${PROJECT_SOURCE_DIR}/flexon_modules/utilities/*.cpp" 
       "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/renderer/*.cpp" 
-     "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/renderer/shaders/*.cpp"
+      "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/renderer/shaders/*.cpp"
       "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/windowManager/*.cpp" 
       "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/windowManager/*.c" 
       "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/windowManager/keyboard/*.cpp" 
       "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/windowManager/xdg/*.cpp" 
+    "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/threads/*.cpp" 
 
 )
 
@@ -52,6 +53,6 @@ set(VERTEX_COMMAND "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/renderer/shad
 add_executable(${ENGINE_NAME} ${SRCS_FILES})
 
 # Link libraries to the executable
-target_link_libraries(${ENGINE_NAME} ${WAYLAND_LIBRARIES} vulkan wayland-client rt shaderc_shared)
+target_link_libraries(${ENGINE_NAME} ${WAYLAND_LIBRARIES} vulkan wayland-client rt shaderc_shared pthread)
 
 

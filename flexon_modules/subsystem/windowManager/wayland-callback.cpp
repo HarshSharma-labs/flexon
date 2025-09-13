@@ -1,20 +1,18 @@
-#include <iostream>
-#include <cstring>
-#include <xkbcommon/xkbcommon.h>
 #include "wayland.hpp"
 #include "./wayland-callback.hpp"
 #include "../../utilities/string.hpp"
+#include <xkbcommon/xkbcommon.h>
+#include <cassert>
+#include <unistd.h>
+#include <iostream>
+#include <wayland-util.h>
+#include <cstring>
+#include <sys/mman.h>
 
 constexpr size_t loop = sizeof(struct pointer_event)/sizeof(uint64_t);
 
 static struct pointer_event pointer_state;
-static struct xkb_state *xkb_state;
-static struct xkb_context *xkb_context;
-static struct xkb_keymap *xkb_keymap;    
    
-int keyboard_init(){
-   xkb_context = xkb_context_new(XKB_CONTEXT_NO_FLAGS); 
-};
 
 static void pointer_button(void *data, struct wl_pointer *pointer,
 		    uint32_t serial, uint32_t time, uint32_t button, uint32_t state) {
@@ -118,16 +116,72 @@ const struct wl_pointer_listener pointer_listener = {
   .axis_discrete = pointer_axis_discrete,
 };
 
+
+static struct xkb_state *key_xkb_state = nullptr;
+static struct xkb_context *key_xkb_context = nullptr;
+static struct xkb_keymap *key_xkb_keymap = nullptr;    
+
+int keyboard_init(){
+   key_xkb_context = xkb_context_new(XKB_CONTEXT_NO_FLAGS); 
+   if(key_xkb_context == nullptr)
+          return -1;
+   return 0;
+};
+
 void keyboard_keymap(void *data,struct wl_keyboard *wl_keyboard,
 		              uint32_t format,int32_t fd,uint32_t size){
 
+  //TODO: propagate error to thread manager to terminate all operations
+  assert(format == WL_KEYBOARD_KEYMAP_FORMAT_XKB_V1);
+  
+  char *key_map = (char*)mmap(NULL,size,PROT_READ,MAP_SHARED,fd,0);
+  assert(key_map != MAP_FAILED);
+
+  struct xkb_keymap *xkb_keymap = xkb_keymap_new_from_string(
+                       key_xkb_context, key_map,
+                       XKB_KEYMAP_FORMAT_TEXT_V1, XKB_KEYMAP_COMPILE_NO_FLAGS);
+
+  munmap(key_map,size);
+  close(fd);
+
+       struct xkb_state *xkb_state = xkb_state_new(xkb_keymap);
+   
+
+       xkb_keymap_unref(key_xkb_keymap);
+       xkb_state_unref(key_xkb_state);
+
+       key_xkb_keymap = xkb_keymap;
+       key_xkb_state = xkb_state;
+
 };
 
-void keyboard_enter(void *data,struct wl_keyboard *wl_keyboard,
+void keyboard_enter(void *data, struct wl_keyboard *wl_keyboard,
                    uint32_t serial,struct wl_surface *surface,
                                        struct wl_array *keys){
+    if(keys->size == 0)
+       return;
 
-    std::cout<<"keyboard here"<<std::endl;
+   return;
+
+  char *pressed_key = nullptr;
+
+  for(size_t size = 0 ; size < keys->size ; size++){
+   pressed_key = (char*)keys->data  + size;
+
+        char buf[128];
+        xkb_keysym_t sym = xkb_state_key_get_one_sym(
+                        key_xkb_state, *pressed_key + 8);
+        
+        xkb_keysym_get_name(sym, buf, sizeof(buf));
+   
+//    std::cout<<buf<<std::endl;
+
+        xkb_state_key_get_utf8(key_xkb_state,
+                        *pressed_key + 8, buf, sizeof(buf));
+    std::cout<<sizeof(xkb_keysym_t)<<std::endl;
+
+  };
+
 };
 
 void keyboard_leave(void *data,struct wl_keyboard *wl_keyboard,
@@ -138,6 +192,24 @@ void keyboard_leave(void *data,struct wl_keyboard *wl_keyboard,
 void keyboard_key(void *data,struct wl_keyboard *wl_keyboard,
                                   uint32_t serial,uint32_t time,
                                         uint32_t key,uint32_t state){
+
+   char buf[128];
+
+    switch(state){   
+    case 	WL_KEYBOARD_KEY_STATE_PRESSED: 
+             xkb_keysym_t sym = xkb_state_key_get_one_sym(
+                        key_xkb_state, key + 8);
+
+   
+        xkb_keysym_get_name(sym, buf, sizeof(buf));
+         fprintf(stderr,"%s",buf);
+    
+
+        xkb_state_key_get_utf8(key_xkb_state,
+                        key + 8, buf, sizeof(buf));
+     break;
+
+  };
 
 };
 

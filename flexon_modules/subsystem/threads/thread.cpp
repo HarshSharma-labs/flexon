@@ -36,5 +36,5 @@ static void *__window_manager_wrapper(void *args){
 };
 
 static void *__renderer__wrapper(void *args){
-
+ return nullptr;
 };

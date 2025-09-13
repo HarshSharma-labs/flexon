@@ -53,6 +53,6 @@ set(VERTEX_COMMAND "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/renderer/shad
 add_executable(${ENGINE_NAME} ${SRCS_FILES})
 
 # Link libraries to the executable
-target_link_libraries(${ENGINE_NAME} ${WAYLAND_LIBRARIES} vulkan wayland-client rt shaderc_shared pthread)
+target_link_libraries(${ENGINE_NAME} ${WAYLAND_LIBRARIES} vulkan wayland-client rt shaderc_shared pthread xkbcommon)
 
 

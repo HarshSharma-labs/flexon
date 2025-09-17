@@ -10,11 +10,50 @@
 #include <unistd.h>
 #include <wayland-client.h>
 
-int height = 500;
-int width = 500;
 
-int stride = width * 4;
-int size = stride * height;
+void resize(void *data){
+    
+    struct window_state *info = (struct window_state*)data;
+
+    int rstride = info->dwidth * sizeof(uint32_t);  
+    int rsize = rstride * info->dheight;
+    info->rsize = rsize;
+
+
+ switch(info->fresize){
+    case WINDOW_RESIZE_GROW:
+     wl_buffer_destroy(info->display_buffer);
+     wl_shm_pool_resize(info->display_shm_pool,rsize);
+     info->display_buffer = wl_shm_pool_create_buffer(info->display_shm_pool, 0,info->dwidth, 
+                                                      info->dheight, rstride, WL_SHM_FORMAT_ABGR8888);
+    break;
+    case WINDOW_RESIZE_SHRINK:
+      wl_shm_pool_destroy(info->display_shm_pool);
+      wl_buffer_destroy(info->display_buffer);
+
+    case WINDOW_RESIZE_NONE:
+
+      info->display_shm_pool = wl_shm_create_pool(info->display_shm, info->shm_fd, rsize);
+      info->display_buffer = wl_shm_pool_create_buffer(info->display_shm_pool, 0,info->dwidth, info->dheight,
+                                                                             rstride, WL_SHM_FORMAT_ABGR8888);
+      info->display_buffer = wl_shm_pool_create_buffer(info->display_shm_pool, 0,info->dwidth, info->dheight, 
+                                                     rstride, WL_SHM_FORMAT_ABGR8888);
+    break;
+    
+  }; 
+
+  
+  
+    wl_surface_attach(info->surface, info->display_buffer, 0,0);
+    wl_surface_damage(info->surface, 0, 0, info->dwidth, info->dheight);
+    wl_surface_commit(info->surface);
+
+  
+  for(int i = 0; i < (info->dwidth * info->dheight) ; i ++){
+    info->pixels[i] = 0xffffffff;
+  };
+          
+};
 
 static void randname(char* buf)
 {
@@ -29,8 +68,11 @@ static void randname(char* buf)
 
 int allocate_shm(void* data)
 {
+    struct window_state *info = (struct window_state*)data;
 
-    struct window_state* by_pass = (window_state*)data;
+    int height = info->display_height;
+    int width = info->display_width;
+  
     char name[] = "/wl_shm-XXXXXX";
     randname(name + sizeof(name) - 7);
 
@@ -40,7 +82,7 @@ int allocate_shm(void* data)
         return -1;
     }
     shm_unlink(name);
-    int ret = ftruncate(fd, size);
+    int ret = ftruncate(fd, info->size);
     if (errno == EINTR) {
         std::cout << "[FTRUNCATE] Failed : " << std::endl;
     }
@@ -49,23 +91,17 @@ int allocate_shm(void* data)
         close(fd);
         return -1;
     }
-    uint32_t* pool_data = (uint32_t*)mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-    for (int i = 0; i < (width * height); i++) {
-        pool_data[i] = 0xffffffff;
-    }
-
-    if (pool_data == MAP_FAILED) {
+    info->shm_fd = fd;
+    info->pixels = (uint32_t*)mmap(NULL, info->size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+  
+    if (info->pixels == MAP_FAILED) {
         std::cout << "mapping failed " << std::endl;
     }
-    by_pass->display_shm_pool = wl_shm_create_pool(by_pass->display_shm, fd, size);
-    by_pass->display_buffer = NULL;
-    by_pass->display_buffer = wl_shm_pool_create_buffer(by_pass->display_shm_pool, 0, width, height, stride, WL_SHM_FORMAT_ABGR8888);
-    wl_shm_pool_destroy(by_pass->display_shm_pool);
-    close(fd);
+    resize(data);
 
-    by_pass->pixels = pool_data;
     return 1;
 }
+
 
 static void register_global(void* data, wl_registry* registry, uint32_t name, const char* interface, uint32_t version)
 {
@@ -77,14 +113,14 @@ static void register_global(void* data, wl_registry* registry, uint32_t name, co
 
     if (strcmp(interface, wl_seat_interface.name) == 0) {
         bypass->display_seat = (wl_seat*)wl_registry_bind(registry, name, &wl_seat_interface, 7);
-        wl_seat_add_listener(bypass->display_seat, &wl_seat_obj, bypass);
+        wl_seat_add_listener(bypass->display_seat, &wl_seat_obj, data);
     }
     if (strcmp(interface, wl_shm_interface.name) == 0) {
-        bypass->display_shm = (wl_shm*)wl_registry_bind(registry, name, &wl_shm_interface, 1);
+        bypass->display_shm = (wl_shm*)wl_registry_bind(registry, name, &wl_shm_interface, 2);
     }
 
     if (strcmp(interface, xdg_wm_base_interface.name) == 0) {
-        bypass->display_xdg_base = (xdg_wm_base*)wl_registry_bind(registry, name, &xdg_wm_base_interface, 1);
+        bypass->display_xdg_base = (xdg_wm_base*)wl_registry_bind(registry, name, &xdg_wm_base_interface, 5);
         xdg_wm_base_add_listener(bypass->display_xdg_base, &xdg_wm_base_callback_listener, data);
     }
 
@@ -95,14 +131,14 @@ static void register_global(void* data, wl_registry* registry, uint32_t name, co
     }
 
     if (strcmp(interface, zxdg_output_manager_v1_interface.name) == 0) {
-      bypass->xdg_output_manager = (zxdg_output_manager_v1*)wl_registry_bind(registry, name,
-            &zxdg_output_manager_v1_interface, 3);
+       bypass->xdg_output_manager = (zxdg_output_manager_v1*)wl_registry_bind(registry, name,
+             &zxdg_output_manager_v1_interface, 3);
+       bypass->xdg_output = zxdg_output_manager_v1_get_xdg_output(bypass->xdg_output_manager , 
+                                                                     bypass->display_output);
+       zxdg_output_v1_add_listener(bypass->xdg_output, &xdg_output_listener, data);
+     }
 
-      bypass->xdg_output = zxdg_output_manager_v1_get_xdg_output(bypass->xdg_output_manager , 
-                                                                 bypass->display_output );
-      zxdg_output_v1_add_listener(bypass->xdg_output, &xdg_output_listener, data);
-
-    }
+ 
 }
 
 static void remove_global(void* data, wl_registry* registry, uint32_t name)
@@ -122,7 +158,7 @@ void waylandWM::create_commit(struct commit_wm* commit)
     
     if(keyboard_init() != 0){
        std::cout<<"[PANIC] Cannot create a keyboard system";
-     return;
+       return;
     }
 
     wm_config.app_name = commit->name;
@@ -150,38 +186,36 @@ void waylandWM::create_commit(struct commit_wm* commit)
     wm_config.xdg_surface_toplevel = xdg_surface_get_toplevel(wm_config.display_xdg_surface);
 
     xdg_surface_add_listener(wm_config.display_xdg_surface, &xdg_surface_callback_listener, &wm_config);
+  
+    wl_surface_commit(wm_config.surface);
+   
+    while (wl_display_dispatch(wm_config.display) != -1 && !wm_config.configured);
+ 
     xdg_toplevel_add_listener(wm_config.xdg_surface_toplevel, &xdg_surface_callback_listener_toplevel, &wm_config);
     xdg_toplevel_set_title(wm_config.xdg_surface_toplevel, commit->name);
     xdg_toplevel_set_app_id(wm_config.xdg_surface_toplevel, commit->name);
-
-    wl_surface_commit(wm_config.surface);
-
-    while (wl_display_dispatch(wm_config.display) != -1 && !wm_config.configured);
-
+    xdg_toplevel_set_min_size(wm_config.xdg_surface_toplevel, 200, 200);
+    xdg_toplevel_set_max_size(wm_config.xdg_surface_toplevel,wm_config.display_width, wm_config.display_height);
+    
     allocate_shm(&wm_config);
-
-    wl_surface_attach(wm_config.surface, wm_config.display_buffer, 0, 0);
-    wl_surface_damage(wm_config.surface, 0, 0, 500, 500);
-    wl_surface_commit(wm_config.surface);
-
-    commit->rc.fheight = 500;
-    commit->rc.fwidth = 500;
-    commit->rc.pixels = wm_config.pixels;
-    commit->rc.display = wm_config.display;
-    commit->rc.surface = wm_config.surface;
-
+  
     return;
 }
 
 void waylandWM::dispatchEvent()
 {
-    while (wl_display_dispatch(wm_config.display) && wm_config.running) {
+    while (wl_display_dispatch(wm_config.display) && wm_config.running){
+      if(wm_config.resized == true){
+        resize(&wm_config);
+        wm_config.resized = false;
+      }
     }
 }
 void waylandWM::destroy()
 {
-
-    munmap(wm_config.pixels, size);
+    close(wm_config.shm_fd);
+    munmap(wm_config.pixels, wm_config.size);
+    wl_shm_pool_destroy(wm_config.display_shm_pool);
     xdg_toplevel_destroy(wm_config.xdg_surface_toplevel);
     xdg_surface_destroy(wm_config.display_xdg_surface);
     wl_surface_destroy(wm_config.surface);

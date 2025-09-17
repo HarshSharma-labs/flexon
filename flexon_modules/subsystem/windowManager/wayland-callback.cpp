@@ -12,17 +12,19 @@
 constexpr size_t loop = sizeof(struct pointer_event)/sizeof(uint64_t);
 
 static struct pointer_event pointer_state;
-   
+static struct key_event key_state;
 
+  
 static void pointer_button(void *data, struct wl_pointer *pointer,
 		    uint32_t serial, uint32_t time, uint32_t button, uint32_t state) {
 
-  
+
     pointer_state.event_type = WL_POINTER_EVENT_BUTTON;
     pointer_state.serial = serial;
     pointer_state.button = button,
     pointer_state.state = state;
     pointer_state.time = time;
+
 }
 
 
@@ -75,6 +77,13 @@ static void pointer_axis(void *data, struct wl_pointer *wl_pointer,
 static void pointer_frame(void *data,struct wl_pointer *wl_pointer){
 
   //TODO: propagate the event data to the state manager pointer event queue
+  
+     //  xdg_toplevel_move(xdg_toplevel, wl_seat, serial);
+     // struct window_state* info = (window_state*)data;
+     //  xdg_toplevel_move(info->xdg_surface_toplevel,info->display_seat,serial);
+     //  xdg_toplevel_show_window_menu(info->xdg_surface_toplevel,info->display_seat,serial,0,0);
+     //  xdg_toplevel_resize(info->xdg_surface_toplevel,info->display_seat,serial,2);
+
   flexon::memset64(&pointer_state,0,loop); 
 };
 
@@ -195,18 +204,18 @@ void keyboard_key(void *data,struct wl_keyboard *wl_keyboard,
 
    char buf[128];
 
+
     switch(state){   
     case 	WL_KEYBOARD_KEY_STATE_PRESSED: 
-             xkb_keysym_t sym = xkb_state_key_get_one_sym(
-                        key_xkb_state, key + 8);
-
-   
-        xkb_keysym_get_name(sym, buf, sizeof(buf));
-         fprintf(stderr,"%s",buf);
+        xkb_keysym_t sym = xkb_state_key_get_one_sym(key_xkb_state, key + 8);
+      
+        if(sym < 0xff){
+          std::cerr<<std::hex<<"0x"<<sym<<" , "; 
+        }else{
+          std::cerr<<"special keys"<<sym;
+        } 
+          
     
-
-        xkb_state_key_get_utf8(key_xkb_state,
-                        key + 8, buf, sizeof(buf));
      break;
 
   };
@@ -217,12 +226,15 @@ void keyboard_modifiers(void *data,struct wl_keyboard *wl_keyboard,
                                 uint32_t serial,uint32_t mods_depressed,
                                    uint32_t mods_latched,uint32_t mods_locked,
                                                                   uint32_t group){
+     xkb_state_update_mask(key_xkb_state,
+        mods_depressed, mods_latched, mods_locked, 0, 0, group);
 
 };
 
 void keyboard_repeat_info(void *data,struct wl_keyboard *wl_keyboard,
                                             int32_t rate,int32_t delay){
 
+    std::cerr<<"Rate : "<<rate<<"delay : "<<delay;
 };
 
 
@@ -244,13 +256,13 @@ static void seat_capability_callback(void* data, struct wl_seat* wl_seat,
 
     if (keyboardPresent && bypass->display_keyboard == NULL) {
         bypass->display_keyboard = wl_seat_get_keyboard(wl_seat);
-        wl_keyboard_add_listener(bypass->display_keyboard, &keyboard_listener,nullptr);
+        wl_keyboard_add_listener(bypass->display_keyboard, &keyboard_listener,data);
       
     }
 
    if (capabilities & WL_SEAT_CAPABILITY_POINTER) {
 	  	 bypass->display_pointer = wl_seat_get_pointer(wl_seat);
-	  	wl_pointer_add_listener(bypass->display_pointer, &pointer_listener,nullptr);
+	  	wl_pointer_add_listener(bypass->display_pointer, &pointer_listener,data);
 	 }
 };
 

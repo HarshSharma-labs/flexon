@@ -18,7 +18,6 @@ set(ENGINE_NAME flexon)
 include_directories(
     "${PROJECT_SOURCE_DIR}/flexon_modules/*.hpp" 
     "${PROJECT_SOURCE_DIR}/flexon_modules/components/*.hpp" 
-    "${PROJECT_SOURCE_DIR}/flexon_modules/componentbase/*.hpp" 
     "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/*.hpp" 
     "${PROJECT_SOURCE_DIR}/flexon_modules/utilities/*.hpp" 
     "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/renderer/*.hpp"
@@ -35,7 +34,6 @@ include_directories(
 # Find source files
 file(GLOB SRCS_FILES 
       "${PROJECT_SOURCE_DIR}/src/*.cpp"
-      "${PROJECT_SOURCE_DIR}/flexon_modules/componentbase/*.cpp"
       "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/*.cpp"
       "${PROJECT_SOURCE_DIR}/flexon_modules/utilities/*.cpp" 
       "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/renderer/*.cpp" 
@@ -44,7 +42,7 @@ file(GLOB SRCS_FILES
       "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/windowManager/*.c" 
       "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/windowManager/keyboard/*.cpp" 
       "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/windowManager/xdg/*.cpp" 
-    "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/threads/*.cpp" 
+      "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/threads/*.cpp" 
 
 )
 

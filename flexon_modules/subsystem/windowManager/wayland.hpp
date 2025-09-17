@@ -8,6 +8,20 @@
 
 class waylandWM;
 
+enum resize_types {
+  WINDOW_RESIZE_NONE = 0,
+  WINDOW_RESIZE_SHRINK,
+  WINDOW_RESIZE_GROW,
+  WINDOW_ESCAPE,
+};
+
+enum window_view{
+  WINDOW_STATE_MAXIMIZED_FULL = 1,
+  WINDOW_STATE_MINIMIZED,
+  WINDOW_STATE_HIDDEN,
+};
+
+
 typedef struct window_state {
     char* app_name;
 
@@ -38,10 +52,20 @@ typedef struct window_state {
     int display_fd;
     int display_height;
     int display_width;
-    uint32_t dwidth;
-    uint32_t dheight;
+    int shm_fd;
+    int stride;
+    int size;
+
+    uint32_t dwidth {500};
+    uint32_t dheight {500};
+    int rsize = 0;
     bool configured = false;
     bool running = true;
+
+    uint32_t fresize = WINDOW_RESIZE_NONE;
+    uint32_t windowstate = {0};
+
+    bool resized = false;
 
     uint32_t *pixels;
     

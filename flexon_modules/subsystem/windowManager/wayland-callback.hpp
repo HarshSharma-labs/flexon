@@ -13,6 +13,20 @@ enum pointer_event_type{
    WL_POINTER_EVENT_AXIS_DISCRETE,
 };
 
+enum keyboard_event_type{
+ WL_KEYBOARD_FOCUS,
+ WL_KEYBOARD_LEAVE,
+ WL_KEYBOARD_KEY,
+ WL_KEYBOARD_REPEAT_INFO,
+ WL_KEYBOARD_MODIFIER
+};
+
+enum keyboard_word_type{
+  WL_KEY_EVENT_ASCII,
+  WL_KEY_EVENT_UNICODE,
+  WL_KEY_EVENT_SPECIAL
+};
+
 struct pointer_event{
 
   uint32_t event_type;
@@ -27,6 +41,12 @@ struct pointer_event{
      wl_fixed_t value;
      int32_t discrete;
   }axis[2];
+};
+
+struct key_event{
+  uint32_t event_type;
+  uint32_t serial;
+  uint32_t special; 
 };
 
 

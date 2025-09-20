@@ -153,13 +153,22 @@ static const struct wl_registry_listener display_registry_listener = {
 
 
 
-void waylandWM::create_commit(struct commit_wm* commit)
+int waylandWM::create_commit(struct commit_wm* commit)
 {
-    
+
+    if(commit->width <= 0 || commit->height <= 0){
+     std::cout<<"invalid window dimensions provided.\n"
+                "Exiting flexon;"<<std::endl;
+      return -1;
+    };
+
     if(keyboard_init() != 0){
        std::cout<<"[PANIC] Cannot create a keyboard system";
-       return;
+       return -1;
     }
+    wm_config.dwidth = commit->width; 
+    wm_config.dheight =  commit->height;
+    
 
     wm_config.app_name = commit->name;
     wm_config.display = wl_display_connect(NULL);
@@ -172,14 +181,14 @@ void waylandWM::create_commit(struct commit_wm* commit)
 
     if (wm_config.display == NULL || wm_config.display_compositor == NULL) {
         std::cout << "cannot connect to wayland display" << std::endl;
-        return;
+        return -1;
     }
 
     wm_config.surface = wl_compositor_create_surface(wm_config.display_compositor);
 
     if (wm_config.surface == NULL) {
         std::cout << "cannot create wayland surface" << std::endl;
-        return;
+        return -1;
     }
 
     wm_config.display_xdg_surface = xdg_wm_base_get_xdg_surface(wm_config.display_xdg_base, wm_config.surface);
@@ -198,8 +207,12 @@ void waylandWM::create_commit(struct commit_wm* commit)
     xdg_toplevel_set_max_size(wm_config.xdg_surface_toplevel,wm_config.display_width, wm_config.display_height);
     
     allocate_shm(&wm_config);
-  
-    return;
+    commit->rc.fheight = wm_config.display_height;
+    commit->rc.fwidth = wm_config.display_width;
+    commit->rc.pixels = wm_config.pixels;
+    commit->rc.display = wm_config.display;
+    commit->rc.surface = wm_config.surface;
+    return 0;
 }
 
 void waylandWM::dispatchEvent()

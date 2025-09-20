@@ -34,8 +34,10 @@ include_directories(
 # Find source files
 file(GLOB SRCS_FILES 
       "${PROJECT_SOURCE_DIR}/src/*.cpp"
+      "${PROJECT_SOURCE_DIR}/app/*.cpp"
       "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/*.cpp"
       "${PROJECT_SOURCE_DIR}/flexon_modules/utilities/*.cpp" 
+      "${PROJECT_SOURCE_DIR}/flexon_modules/components/*.cpp" 
       "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/renderer/*.cpp" 
       "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/renderer/shaders/*.cpp"
       "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/windowManager/*.cpp" 

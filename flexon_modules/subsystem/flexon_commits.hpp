@@ -1,5 +1,7 @@
 #ifndef __FLEXON_COMMIT__
 #define __FLEXON_COMMIT__
+#include <semaphore.h>
+
 
 struct commit_info{
   size_t idx_size;
@@ -23,6 +25,7 @@ struct rcommit_wm{
 };
 
 struct commit_wm{
+  sem_t signal;
   char *name;
   uint32_t width;
   uint32_t height;

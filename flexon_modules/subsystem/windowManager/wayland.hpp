@@ -56,8 +56,8 @@ typedef struct window_state {
     int stride;
     int size;
 
-    uint32_t dwidth {500};
-    uint32_t dheight {500};
+    uint32_t dwidth {0};
+    uint32_t dheight {0};
     int rsize = 0;
     bool configured = false;
     bool running = true;
@@ -74,7 +74,7 @@ typedef struct window_state {
 class waylandWM {
 public:
    
-    void create_commit(struct commit_wm *commit);
+    int create_commit(struct commit_wm *commit);
     void destroy();
     void dispatchEvent();
 

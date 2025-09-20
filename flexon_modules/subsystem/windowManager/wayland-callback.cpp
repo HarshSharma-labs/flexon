@@ -84,7 +84,7 @@ static void pointer_frame(void *data,struct wl_pointer *wl_pointer){
      //  xdg_toplevel_show_window_menu(info->xdg_surface_toplevel,info->display_seat,serial,0,0);
      //  xdg_toplevel_resize(info->xdg_surface_toplevel,info->display_seat,serial,2);
 
-  flexon::memset64(&pointer_state,0,loop); 
+ // flexon::memset64(&pointer_state,0,loop); 
 };
 
 static void pointer_axis_source(void *data, struct wl_pointer *wl_pointer,

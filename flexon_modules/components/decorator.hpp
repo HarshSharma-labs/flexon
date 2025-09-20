@@ -1,0 +1,268 @@
+#ifndef __FLEXON_DECORATOR_HPP__
+#define __FLEXON_DECORATOR_HPP__
+
+#include "./View.hpp"
+#include "./base.hpp"
+#include <map>
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
+
+
+typedef struct uniparam{
+ float top;
+ float bottom;
+ float left;
+ float right;
+}uniparam;
+
+typedef struct runiparam{
+ float topLeft;
+ float topRight;
+ float bottomLeft;
+ float bottomRight;
+}runiparam;
+
+class modifier {
+public:
+
+  
+    modifier &context(fiber *ctx){
+
+     mine = ctx;
+     paint.display = DISPLAY_NONE;
+     paint.visible = VIEW_HIDE;
+     memset(&paint,'\0',sizeof(base_paint));
+
+     return *this;
+   };
+
+  
+   modifier &commitContext(){
+     base_paint *tmp = new base_paint;
+     memcpy(tmp,&paint,sizeof(base_paint));
+     mine->paint = tmp;
+     return *this;
+   };
+
+   //only operate on text
+   modifier &color(uint32_t value){  return *this;};
+
+   modifier &backgroundColor(uint32_t value){
+    if(paint.bgColor != nullptr) return *this;
+     paint.bgColor = (uint32_t *)new struct normal_fill;
+    *paint.bgColor = COLOR_FILL;
+    *(paint.bgColor+1) = value;
+    return *this; 
+  };
+
+/*
+  //only linear gradient;
+   modifier &enablegradient(){
+      if(mine.paint.bgColor != nullptr) return;
+   return *this;
+
+   modifier &gradientstart(float x, float y);
+   modifier &gradientstop(float x,float y);
+   modifier &gradient(uint32_t color,float stop);
+*/
+
+   modifier &margin(float value){
+   paint.geometry.margin.x = value;
+   return *this;
+   };
+   modifier &margin(uniparam margins){
+   memcpy(&paint.geometry.margin,&margins ,sizeof(uniparam));
+   return *this;
+   };
+   modifier &padding(float value){
+   paint.geometry.padding.x = value;
+   return *this;
+   };
+
+   modifier &padding(uniparam paddings){
+   memcpy(&paint.geometry.padding.x,&paddings ,sizeof(uniparam));
+   return *this;
+   };
+
+
+   modifier &borderWidth(float value){
+   paint.geometry.borderWidth.x = value;
+   return *this;
+   };
+
+   modifier &borderWidth(uniparam widths){
+   memcpy(&paint.geometry.borderWidth,&widths,sizeof(uniparam));
+   return *this;
+   };
+
+   modifier &borderRadius(float value){
+   paint.geometry.cornerRadius.x = value;
+   return *this;
+   };
+   modifier &borderRaidus(runiparam radius){
+    memcpy(&paint.geometry.cornerRadius,&radius ,sizeof(runiparam));
+   return *this;
+  };
+
+   modifier &dimension(float width,float height){
+    switch(paint.display){
+     case DISPLAY_FLEX:
+     case DISPLAY_GRID:
+     case DISPLAY_NONE:
+        return *this;
+     break;
+    };
+     paint.visible = VIEW_HIDE;
+     paint.display = DISPLAY_CUSTOM;
+     paint.geometry.dimension.z = width;
+     paint.geometry.dimension.w = height;
+     return *this;
+
+   };
+
+    modifier &flex(float value){
+      switch(paint.display){
+        case DISPLAY_NONE:
+        case DISPLAY_GRID:
+        case DISPLAY_CUSTOM:
+         return *this;
+        break;
+     };
+     paint.display = DISPLAY_FLEX;
+     paint.visible = VIEW_HIDE;
+     paint.flex = value;
+    }
+
+    /*
+   *   display function:
+   *   - format of args : "key"
+   *
+   *   type of key:
+   *    1) none             : n
+   *    2) flex             : f
+   *    3) custom           : c
+   *    4) grid             : g
+   */
+
+    modifier &display(char key){
+     switch(key){
+      case 'n':
+       paint.display = DISPLAY_NONE;
+      break;
+      case 'f':
+        paint.display = DISPLAY_FLEX;
+      break;
+      case 'c':
+       paint.display = DISPLAY_CUSTOM;
+      break;
+      case 'g':
+       paint.display = DISPLAY_GRID;
+      break;
+     };
+     return *this;
+    };
+   
+    /*
+   *  justifyContent function:
+   *   - format of args : "key"
+   *
+   *   type of key:
+   *    1) flex-start       : fs
+   *    2) flex-end         : fe
+   *    3) center           : c
+   *    4) space-between    : sb
+   *    5) space-around     : sa
+   *    6) space-evenly     : se
+   *    7) start            : s
+   *    8) end              : e
+   */
+   modifier &justifyContent(char* key){
+    int keylen = strlen(key);
+    if(keylen > 2) return *this;
+
+    char seq[3];
+    strcpy(seq,key);
+
+    switch(seq[0]){
+     case 'c':
+       paint.justifyItems = JUSTIFY_CENTER;
+       return *this;
+      case 's':
+         switch(seq[1]){
+          case 'b':
+           paint.justifyItems = JUSTIFY_SPACE_BETWEEN;
+          return *this;
+          case 'a':
+          paint.justifyItems = JUSTIFY_SPACE_AROUND;
+          return *this;
+          case 'e':
+          paint.justifyItems = JUSTIFY_SPACE_EVENLY;
+          return *this;
+          }
+      paint.justifyItems = JUSTIFY_START;
+      return *this;
+      case'e':
+      paint.justifyItems = JUSTIFY_FLEX_END;
+      return *this;
+      case 'f':
+        switch(seq[1]){
+          case 's':
+           paint.justifyItems = JUSTIFY_FLEX_START;
+          return *this;
+          case 'e':
+           paint.justifyItems = JUSTIFY_FLEX_END;
+          return *this;
+
+        }
+    } 
+     paint.justifyItems = JUSTIFY_START;
+     return *this;
+  };
+  
+  /*
+   * alignitems function:
+   *  - format of args: "key"
+   *
+   *  type of key:
+   *    1) center           : c
+   *    2) baseline         : b
+   *    3) stretch          : s
+   *    4) flex-start       : fs
+   *    5) flex-end         : fe
+   */
+   modifier &alignItems(char* key);
+
+  /* here parameter are as follow 
+   * from = which paint attribute to copy
+   * fiberid = id of the new fiber node that receives the clone
+   */
+   
+  static base_paint *deepClone(base_paint *from , uint32_t fiberid){
+   
+  };
+
+private:
+
+  fiber *mine = nullptr;
+  base_paint paint;
+  //base_geo paint.geometry;
+
+  /*
+  * ppaint owns all the base_paint created within the flexon.
+  * it's primary function if to have fast search of view data.
+  * and allows synchronisation of latest paint among the view.
+  */
+
+  static inline std::unordered_map<uint32_t,base_paint*> ppaint;
+ // static inline std::vector<normal_fill*> fill;
+ // static inline std::vector<gradient_color*> gradient_fill;
+ 
+ 
+
+ // provided by stylesheet; 
+ // static map<rectView*,base *> stylesheet;
+ //  static vector<sweep_gradient*> sweep_fill;
+};
+
+#endif

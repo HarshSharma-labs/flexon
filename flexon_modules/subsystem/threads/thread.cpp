@@ -1,6 +1,6 @@
 #include "../windowManager/wayland.hpp"
 #include "../../components/View.hpp"
-#include "../../utilities/layout.hpp"
+#include "../layoutmanager/layout.hpp"
 #include "../flexon_commits.hpp"
 #include "./thread.hpp"
 #include <pthread.h>

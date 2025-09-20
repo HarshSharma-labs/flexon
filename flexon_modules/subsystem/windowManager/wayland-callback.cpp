@@ -1,6 +1,6 @@
 #include "wayland.hpp"
 #include "./wayland-callback.hpp"
-#include "../../utilities/string.hpp"
+#include "../../utilities/utility.hpp"
 #include <xkbcommon/xkbcommon.h>
 #include <cassert>
 #include <unistd.h>

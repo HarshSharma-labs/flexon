@@ -13,24 +13,6 @@ set(CMAKE_COMMAND glslc)
 set(ENGINE_NAME flexon)
 
 
-
-# Include necessary directories
-include_directories(
-    "${PROJECT_SOURCE_DIR}/flexon_modules/*.hpp" 
-    "${PROJECT_SOURCE_DIR}/flexon_modules/components/*.hpp" 
-    "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/*.hpp" 
-    "${PROJECT_SOURCE_DIR}/flexon_modules/utilities/*.hpp" 
-    "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/renderer/*.hpp"
-    "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/renderer/shaders/*.hpp"
-    "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/windowManager/*.hpp" 
-    "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/windowManager/*.h"
-    "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/windowManager/*.hpp" 
-    "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/windowManager/xdg/*.cpp" 
-    "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/threads/*.hpp" 
-
-
-)
-
 # Find source files
 file(GLOB SRCS_FILES 
       "${PROJECT_SOURCE_DIR}/src/*.cpp"
@@ -45,14 +27,13 @@ file(GLOB SRCS_FILES
       "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/windowManager/keyboard/*.cpp" 
       "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/windowManager/xdg/*.cpp" 
       "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/threads/*.cpp" 
+      "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/layoutmanager/*.cpp" 
 
 )
 
-set(VERTEX_COMMAND "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/renderer/shaders/vertex_shader.glsl") 
-# Add executable
 add_executable(${ENGINE_NAME} ${SRCS_FILES})
 
 # Link libraries to the executable
-target_link_libraries(${ENGINE_NAME} ${WAYLAND_LIBRARIES} vulkan wayland-client rt shaderc_shared pthread xkbcommon)
+target_link_libraries(${ENGINE_NAME} vulkan wayland-client rt shaderc_shared pthread xkbcommon)
 
 

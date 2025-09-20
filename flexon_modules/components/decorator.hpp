@@ -3,7 +3,7 @@
 
 #include "./View.hpp"
 #include "./base.hpp"
-#include <map>
+#include <unordered_map>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
@@ -239,7 +239,7 @@ public:
    */
    
   static base_paint *deepClone(base_paint *from , uint32_t fiberid){
-   
+   return nullptr; 
   };
 
 private:

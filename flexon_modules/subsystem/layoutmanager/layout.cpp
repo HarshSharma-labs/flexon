@@ -13,6 +13,7 @@ struct{
 };
 */
 
+
 void deepCloneFiber(fiber *which){
 
 };
@@ -62,6 +63,9 @@ void buildfibertree(void(*node)(), fiber *parent){
 
 
 void initial_commit(void (*node)(),void(*main)(fiber *wrap)){
+    //std::cout<<std::hex<<fnv_1hash(0xffcaffac)<<std::endl;
+
+    return;
 
     fiber *fibertop = new fiber;
     main(fibertop);

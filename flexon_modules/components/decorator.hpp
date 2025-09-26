@@ -3,17 +3,32 @@
 
 #include "./View.hpp"
 #include "./base.hpp"
+#include "../utilities/utility.hpp"
 #include <unordered_map>
+#include <iostream>
 #include <cstddef>
+#include <bitset>
 #include <cstdint>
 #include <cstring>
 
 
+/* uniparam :
+ * fields to vec4 translation:
+ *  
+ *  top = x in vec4.
+ *  bottom = y in vec4.
+ *  right = z in vec4.
+ *  left = w in vec4.
+ */
+
+/*
+ * [CRITICAL SECTION DON'T REORDER FIELDS]
+ */
 typedef struct uniparam{
- float top;
- float bottom;
- float left;
- float right;
+ float top;     
+ float bottom;  
+ float right;    
+ float left; 
 }uniparam;
 
 typedef struct runiparam{
@@ -21,7 +36,11 @@ typedef struct runiparam{
  float topRight;
  float bottomLeft;
  float bottomRight;
+
 }runiparam;
+/*
+ * [CRITICAL SECTION END]
+ */
 
 class modifier {
 public:
@@ -40,9 +59,12 @@ public:
   
    modifier &commitContext(){
      base_paint *tmp = new base_paint;
-     memcpy(tmp,&paint,sizeof(base_paint));
+          
+     ppaint[mine->fiberid] = tmp;
      mine->paint = tmp;
-     return *this;
+     utility::strings::memcpy64(&paint,tmp ,paintsize64);
+
+        return *this;
    };
 
    //only operate on text
@@ -68,41 +90,57 @@ public:
 */
 
    modifier &margin(float value){
-   paint.geometry.margin.x = value;
-   return *this;
+    paint.geometry.margin.x = value;
+    paint.flagpadmar |= UNITYPE_MARGIN_ALL; 
+    return *this;
    };
+
    modifier &margin(uniparam margins){
    memcpy(&paint.geometry.margin,&margins ,sizeof(uniparam));
+   utility::decorator::setbits(&paint.flagpadmar,(float*)&margins , UNITYPE_STRIDE_MARGIN);
+
    return *this;
    };
+
    modifier &padding(float value){
    paint.geometry.padding.x = value;
+   paint.flagpadmar |= UNITYPE_PADDING_ALL;
+
    return *this;
    };
 
    modifier &padding(uniparam paddings){
    memcpy(&paint.geometry.padding.x,&paddings ,sizeof(uniparam));
+   utility::decorator::setbits(&paint.flagpadmar,(float*)&paddings , UNITYPE_STRIDE_PADDING);
    return *this;
    };
 
 
    modifier &borderWidth(float value){
    paint.geometry.borderWidth.x = value;
+   paint.flagborrad |= UNITYPE_BORDERWIDTH_ALL;
+ 
    return *this;
    };
 
    modifier &borderWidth(uniparam widths){
    memcpy(&paint.geometry.borderWidth,&widths,sizeof(uniparam));
-   return *this;
+   utility::decorator::setbits(&paint.flagborrad,(float*)&widths , UNITYPE_STRIDE_BORDERWIDTH);
+ 
+    return *this;
    };
 
    modifier &borderRadius(float value){
    paint.geometry.cornerRadius.x = value;
+   paint.flagborrad |= UNITYPE_BORDERRADIUS_ALL;
    return *this;
    };
-   modifier &borderRaidus(runiparam radius){
-    memcpy(&paint.geometry.cornerRadius,&radius ,sizeof(runiparam));
-   return *this;
+
+   modifier &borderRadius(runiparam radius){
+   memcpy(&paint.geometry.cornerRadius,&radius ,sizeof(runiparam));
+   utility::decorator::setbits(&paint.flagborrad,(float*)&radius, UNITYPE_STRIDE_BORDERRADIUS);
+ 
+    return *this;
   };
 
    modifier &dimension(float width,float height){
@@ -120,18 +158,26 @@ public:
      return *this;
 
    };
+    modifier &windowDimension(float width , float height){
+    if(mine->fiberid == 1){
+      paint.geometry.dimension.z = width;
+      paint.geometry.dimension.w = height;
+       };
+    return *this;
+    };
 
     modifier &flex(float value){
-      switch(paint.display){
+    if(mine->parent != nullptr){
+      switch(mine->parent->paint->display){
         case DISPLAY_NONE:
         case DISPLAY_GRID:
         case DISPLAY_CUSTOM:
          return *this;
         break;
+      };
      };
-     paint.display = DISPLAY_FLEX;
-     paint.visible = VIEW_HIDE;
      paint.flex = value;
+     return *this;
     }
 
     /*
@@ -160,9 +206,22 @@ public:
        paint.display = DISPLAY_GRID;
       break;
      };
+      paint.layout_direction = LAYOUT_DIRECTION_COL;
+
      return *this;
     };
-   
+    
+    modifier &layoutDirection(char key){
+     switch(key){
+      case 'c':
+       paint.layout_direction = LAYOUT_DIRECTION_COL;
+      break;
+      case 'r':
+       paint.layout_direction = LAYOUT_DIRECTION_ROW;
+      break;
+     };
+     return *this;
+    }
     /*
    *  justifyContent function:
    *   - format of args : "key"
@@ -238,9 +297,21 @@ public:
    * fiberid = id of the new fiber node that receives the clone
    */
    
-  static base_paint *deepClone(base_paint *from , uint32_t fiberid){
-   return nullptr; 
+  constexpr static  size_t paintsize64 = sizeof(base_paint)/ sizeof(uint64_t);
+  constexpr static  size_t fibersize64 = sizeof(fiber)/ sizeof(uint64_t);
+  constexpr static  size_t geosize64 = sizeof(base_geo) / sizeof(uint64_t);
+  constexpr static  size_t vec4floatsize64 = sizeof(vec4<float>) / sizeof(uint64_t);
+
+  static base_paint *deepClone(base_paint *from , uint32_t tofiberid){
+    if(from == nullptr)
+       return nullptr;
+
+    base_paint *tmp = new base_paint;
+    ppaint[tofiberid] = tmp;
+    utility::strings::memcpy64(from , tmp ,paintsize64);
+    return tmp; 
   };
+
 
 private:
 

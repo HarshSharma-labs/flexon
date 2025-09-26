@@ -34,8 +34,8 @@ enum display_type{
 
 };
 enum layout_direction{
-  FLEX_DIRECTION_ROW,
-  FLEX_DIRECTION_COL
+  LAYOUT_DIRECTION_ROW,
+  LAYOUT_DIRECTION_COL
 };
 enum positon{
   POSITION_RELATIVE = 0,
@@ -51,7 +51,6 @@ enum color_fill_type {
   COLOR_SHADOW_INSET,
   COLOR_SHADOW_OUTSET,
 };
-
 enum over_flow_types {
   OVER_SHOW = 0,
   OVER_HIDDEN,
@@ -80,6 +79,47 @@ enum view_update_type{
  UPDATE_TYPE_RADIUS = 1 << 8,
 
 };
+
+/*
+ * [CRITICAL SECTION DON'T REORDER FIELDS]
+ */
+
+enum unitypes{
+ UINTYPE_NONE = 0,
+ UNITYPE_PADDING_TOP = 1 << 0,
+ UNITYPE_PADDING_BOTTOM = 1 << 1,
+ UNITYPE_PADDING_RIGHT = 1 << 2,
+ UNITYPE_PADDING_LEFT = 1 << 3,
+ 
+ UNITYPE_MARGIN_TOP = 1 << 4,
+ UNITYPE_MARGIN_BOTTOM = 1 << 5,
+ UNITYPE_MARGIN_RIGHT = 1 << 6,
+ UNITYPE_MARGIN_LEFT = 1 << 7,
+
+ UNITYPE_BORDERRADIUS_TOP_LEFT =  UNITYPE_PADDING_TOP,
+ UNITYPE_BORDERRADIUS_TOP_RIGHT = UNITYPE_PADDING_BOTTOM,
+ UNITYPE_BORDERRADIUS_BOTTOM_LEFT = UNITYPE_PADDING_RIGHT,
+ UNITYPE_BORDERRADIUS_BOTTOM_RIGHT = UNITYPE_PADDING_LEFT,
+
+ UNITYPE_BORDERWIDTH_TOP =  UNITYPE_MARGIN_TOP,
+ UNITYPE_BORDERWIDTH_BOTTOM = UNITYPE_MARGIN_BOTTOM,
+ UNITYPE_BORDERWIDTH_RIGHT = UNITYPE_MARGIN_RIGHT,
+ UNITYPE_BORDERWIDTH_LEFT = UNITYPE_MARGIN_LEFT,
+ UNITYPE_STRIDE_PADDING = 0,
+ UNITYPE_STRIDE_MARGIN = 4,
+ UNITYPE_STRIDE_BORDERRADIUS = UNITYPE_STRIDE_PADDING,
+ UNITYPE_STRIDE_BORDERWIDTH = UNITYPE_STRIDE_MARGIN,
+
+ UNITYPE_PADDING_ALL = 0x0f,
+ UNITYPE_MARGIN_ALL = 0xf0, 
+ UNITYPE_BORDERRADIUS_ALL = UNITYPE_PADDING_ALL,
+ UNITYPE_BORDERWIDTH_ALL = UNITYPE_MARGIN_ALL
+};
+
+/*
+ * [CRITICAL SECTION END]
+ */
+
 
 struct normal_fill{
  uint32_t type;
@@ -149,14 +189,34 @@ typedef struct base_paint{
    uint8_t overflow;
    uint8_t display;
    uint8_t layout_direction;
+  /*
+  * flagpadma: represent what kind of update are made to the
+  *            padding and margin of a node.
+  *   sizeof(flagpadmar) = 1 byte (8bits)
+  *   4 bits for 4 types of padding;
+  *   and other 4 for 4 types of margin;
+  *   paddings  margins
+  *    0000     0000
+  */
+   uint8_t flagpadmar;
+
+  /*
+  * flagborrad: represent what kind of update are made to the
+  *            border-width and border-radius of a node.
+  *   sizeof(flagborrad) = 1 byte (8bits)
+  *   4 bits for 4 types of border-width;
+  *   and other 4 for 4 types of border-radius;
+  *   border-width  border-radius
+  *       0000         0000
+  */
+  
+   uint8_t flagborrad;
 }base_paint;
 
 
 
 typedef struct fiber{
-   uint32_t fibreid;
-   uint32_t hookCount;
-   callback  event;
+   uint32_t fiberid;
    base_quad quad;
    base_paint *paint;
    void(*child)();

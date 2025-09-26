@@ -17,6 +17,7 @@ enum resize_types {
 
 enum window_view{
   WINDOW_STATE_MAXIMIZED_FULL = 1,
+  WINDOW_STATE_MAXIMIZED_BOUNDED,
   WINDOW_STATE_MINIMIZED,
   WINDOW_STATE_HIDDEN,
 };
@@ -52,6 +53,8 @@ typedef struct window_state {
     int display_fd;
     int display_height;
     int display_width;
+    int height_bound;
+    int width_bound;
     int shm_fd;
     int stride;
     int size;

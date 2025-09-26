@@ -28,6 +28,7 @@ file(GLOB SRCS_FILES
       "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/windowManager/xdg/*.cpp" 
       "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/threads/*.cpp" 
       "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/layoutmanager/*.cpp" 
+      "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/statemanager/*.cpp" 
 
 )
 

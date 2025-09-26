@@ -21,7 +21,6 @@ static void xdg_surface_callback_configure(void* data, struct xdg_surface* xdg_s
     struct window_state *wayland_config = (window_state *)data;
     xdg_surface_ack_configure(xdg_surface, serial);
     wayland_config->configured = true;
-   std::cout<<"configured"<<std::endl;
 }
 
 const struct xdg_surface_listener xdg_surface_callback_listener = {
@@ -56,11 +55,13 @@ static void xdg_surface_callback_toplevel_close(void* data, struct xdg_toplevel*
 {
   struct window_state *wayland_config = (window_state *)data;
   wayland_config->running = false;
-  std::cout << "closing request found" << std::endl;
+  
 }
 static void xdg_configure_bounds(void *data,struct xdg_toplevel *xdg_toplevel,
-				                                     int32_t width,int32_t height){
-  std::cout<<width<<" bounds - "<<height<<std::endl;
+				                                     int32_t width,int32_t height){ 
+  struct window_state *info = (struct window_state*)data;
+  info->width_bound = width;
+  info->height_bound = height;
 }
 
 const struct xdg_toplevel_listener xdg_surface_callback_listener_toplevel = {
@@ -69,27 +70,30 @@ const struct xdg_toplevel_listener xdg_surface_callback_listener_toplevel = {
     .configure_bounds = xdg_configure_bounds
 };
 
-static void xdg_output_logical_position (void *data, struct zxdg_output_v1 *zxdg_output_v1,int32_t x,int32_t y){
-  std::cout<<"[xdg logical position] "<<x<<" : "<<y<<std::endl;
-}
-static void xdg_output_logical_size (void *data,struct zxdg_output_v1 *zxdg_output_v1, int32_t width, int32_t height){
+static void xdg_output_logical_position (void *data, struct zxdg_output_v1 *zxdg_output_v1,
+                                         int32_t x,int32_t y){};
 
-  std::cout<<"[xdg logical size] "<<width<<" : "<<height<<std::endl;
+static void xdg_output_logical_size (void *data,struct zxdg_output_v1 *zxdg_output_v1, 
+                                     int32_t width, int32_t height){
+
   struct window_state *info = (struct window_state*)data;
   info->display_height = height;
   info->display_width = width;
   info->stride = width * sizeof(uint32_t);
   info->size = info->stride * height;
-}
+};
+
 static void xdg_output_done (void *data,struct zxdg_output_v1 *zxdg_output_v1){
   std::cout<<"[xdg done]"<<std::endl;
-}
+};
+
 static void xdg_output_name (void *data, struct zxdg_output_v1 *zxdg_output_v1, const char *name){
   std::cout<<"[xdg name]"<<name<<std::endl;
-}
-static void xdg_output_description (void *data,struct zxdg_output_v1 *zxdg_output_v1,const char *description){
+};
+static void xdg_output_description (void *data,struct zxdg_output_v1 *zxdg_output_v1,
+                                     const char *description){
   std::cout<<"[xdg description]"<<description<<std::endl;
-}
+};
 
 const struct zxdg_output_v1_listener xdg_output_listener  = {
  .logical_position = xdg_output_logical_position,

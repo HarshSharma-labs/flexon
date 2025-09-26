@@ -1,4 +1,3 @@
-#include "./keyboard/keyboard.hpp"
 #include "./wayland-callback.hpp"
 #include "./xdg/xdg.hpp"
 
@@ -9,7 +8,7 @@
 #include <time.h>
 #include <unistd.h>
 #include <wayland-client.h>
-
+#include <iostream>
 
 void resize(void *data){
     
@@ -206,7 +205,6 @@ int waylandWM::create_commit(struct commit_wm* commit)
     xdg_toplevel_set_min_size(wm_config.xdg_surface_toplevel, 200, 200);
     xdg_toplevel_set_max_size(wm_config.xdg_surface_toplevel,wm_config.display_width, wm_config.display_height);
     
-    allocate_shm(&wm_config);
     commit->rc.fheight = wm_config.display_height;
     commit->rc.fwidth = wm_config.display_width;
     commit->rc.pixels = wm_config.pixels;
@@ -217,6 +215,7 @@ int waylandWM::create_commit(struct commit_wm* commit)
 
 void waylandWM::dispatchEvent()
 {
+    allocate_shm(&wm_config);
     while (wl_display_dispatch(wm_config.display) && wm_config.running){
       if(wm_config.resized == true){
         resize(&wm_config);

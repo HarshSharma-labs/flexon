@@ -7,26 +7,33 @@
 
 void post_startup(fiber *wrap){
  modifier root;
-  root.context(wrap).display('n').dimension(500.0f,500.0f).commitContext();
+  root.context(wrap).display('f').layoutDirection('c')
+    .windowDimension(500.0f,500.0f)
+    .padding({0.0f,20.0f,20.0f,10.0f})
+    .borderWidth({10.0f,0.0f,20.0f,0.0f})
+    .commitContext();
 };
 
 void app_main(){
 
 View([](fiber *wrap){
-      std::cout<<"hello style"<<std::endl;
+     modifier style;
+     style.context(wrap).display('f').layoutDirection('c').flex(1.0f).commitContext();
   },[](){
-    std::cout<<"child1"<<std::endl;
-  View([](fiber *wrap){
-       std::cout<<"child ka child ka style"<<std::endl;
-     },[](){
-       std::cout<<"child ka child"<<std::endl;
-     });
-  });
+/*
+View([](fiber *wrap){
+     modifier style;
+     style.context(wrap).flex(1.0f).layoutDirection('r').commitContext();
+  },[](){
+   });
+*/
+
+});
 
 View([](fiber *wrap){
-   std::cout<<"style child"<<std::endl;
+    modifier style;
+    style.context(wrap).display('n').flex(1.0f).commitContext();
   },[](){
-  std::cout<<"child2"<<std::endl;
  });
 
 }

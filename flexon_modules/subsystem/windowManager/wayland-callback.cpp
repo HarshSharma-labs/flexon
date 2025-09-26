@@ -1,42 +1,42 @@
 #include "wayland.hpp"
 #include "./wayland-callback.hpp"
 #include "../../utilities/utility.hpp"
+#include "../statemanager/statemanager.hpp"
 #include <xkbcommon/xkbcommon.h>
 #include <cassert>
 #include <unistd.h>
 #include <iostream>
-#include <wayland-util.h>
 #include <cstring>
 #include <sys/mman.h>
 
 constexpr size_t loop = sizeof(struct pointer_event)/sizeof(uint64_t);
 
-static struct pointer_event pointer_state;
-static struct key_event key_state;
+static struct pointer_event *pointer_state;
+static struct key_event *key_state;
 
   
 static void pointer_button(void *data, struct wl_pointer *pointer,
 		    uint32_t serial, uint32_t time, uint32_t button, uint32_t state) {
 
 
-    pointer_state.event_type = WL_POINTER_EVENT_BUTTON;
-    pointer_state.serial = serial;
-    pointer_state.button = button,
-    pointer_state.state = state;
-    pointer_state.time = time;
-
+    pointer_state->event_type = WL_POINTER_EVENT_BUTTON;
+    pointer_state->serial = serial;
+    pointer_state->button = button,
+    pointer_state->state = state;
+    pointer_state->time = time;
+ 
 }
 
 
 static void pointer_enter (void *data, struct wl_pointer *wl_pointer,uint32_t serial,
 		      struct wl_surface *surface,wl_fixed_t surface_x,wl_fixed_t surface_y){
-
-    pointer_state.event_type = WL_POINTER_EVENT_ENTER;
-    pointer_state.x = surface_x;
-    pointer_state.y = surface_y;
-    pointer_state.serial = serial;
     
-
+    pointer_state = statemanager::getNextPointerQueue(); 
+    pointer_state->event_type = WL_POINTER_EVENT_ENTER;
+    pointer_state->x = surface_x;
+    pointer_state->y = surface_y;
+    pointer_state->serial = serial;
+   
       
 };
 
@@ -44,8 +44,8 @@ static void pointer_leave(void *data,struct wl_pointer *wl_pointer,
 		                        uint32_t serial,struct wl_surface *surface){
     
 
-    pointer_state.event_type = WL_POINTER_EVENT_LEAVE;
-    pointer_state.serial = serial;
+    pointer_state->event_type = WL_POINTER_EVENT_LEAVE;
+    pointer_state->serial = serial;
 
 };
 
@@ -54,10 +54,10 @@ static void pointer_motion(void *data,struct wl_pointer *wl_pointer,
 		             uint32_t time, wl_fixed_t surface_x,wl_fixed_t surface_y){
 
 
-    pointer_state.event_type = WL_POINTER_EVENT_MOTION;
-    pointer_state.x = surface_x;
-    pointer_state.y = surface_y;
-    pointer_state.time = time;
+    pointer_state->event_type = WL_POINTER_EVENT_MOTION;
+    pointer_state->x = surface_x;
+    pointer_state->y = surface_y;
+    pointer_state->time = time;
   
 
 };
@@ -66,10 +66,10 @@ static void pointer_motion(void *data,struct wl_pointer *wl_pointer,
 static void pointer_axis(void *data, struct wl_pointer *wl_pointer,
 		                           uint32_t time,uint32_t axis,wl_fixed_t value){
 
-    pointer_state.event_type = WL_POINTER_EVENT_AXIS;
-    pointer_state.time = time;
-    pointer_state.axis[axis].valid = 1;
-    pointer_state.axis[axis].value = value;
+    pointer_state->event_type = WL_POINTER_EVENT_AXIS;
+    pointer_state->time = time;
+    pointer_state->axis[axis].valid = 1;
+    pointer_state->axis[axis].value = value;
      
 
 };
@@ -82,24 +82,28 @@ static void pointer_frame(void *data,struct wl_pointer *wl_pointer){
      // struct window_state* info = (window_state*)data;
      //  xdg_toplevel_move(info->xdg_surface_toplevel,info->display_seat,serial);
      //  xdg_toplevel_show_window_menu(info->xdg_surface_toplevel,info->display_seat,serial,0,0);
-     //  xdg_toplevel_resize(info->xdg_surface_toplevel,info->display_seat,serial,2);
-
- // flexon::memset64(&pointer_state,0,loop); 
+     // xdg_toplevel_resize(info->xdg_surface_toplevel,info->display_seat,info->serial,2);
+     //  xdg_toplevel_resize(info->xdg_surface_toplevel,info->display_seat,pointer_state.serial,3);
+     // flexon::memset64(&pointer_state,0,loop);
+  
+   
+   pointer_state = statemanager::getNextPointerQueue(); 
+   utility::strings::memset64(pointer_state,0,7);
 };
 
 static void pointer_axis_source(void *data, struct wl_pointer *wl_pointer,
                              			    uint32_t axis_source){
 
-    pointer_state.event_type = WL_POINTER_EVENT_AXIS_SOURCE;
-    pointer_state.axis_source = axis_source;
+    pointer_state->event_type = WL_POINTER_EVENT_AXIS_SOURCE;
+    pointer_state->axis_source = axis_source;
 };
 
 static void pointer_axis_stop(void *data, struct wl_pointer *wl_pointer,
 		                                uint32_t time,uint32_t axis){
 
-    pointer_state.event_type = WL_POINTER_EVENT_AXIS_STOP;
-    pointer_state.time = time;
-    pointer_state.axis[axis].valid = 1;
+    pointer_state->event_type = WL_POINTER_EVENT_AXIS_STOP;
+    pointer_state->time = time;
+    pointer_state->axis[axis].valid = 1;
      
 };
 
@@ -107,9 +111,9 @@ static void pointer_axis_discrete(void *data, struct wl_pointer *wl_pointer,
                                    uint32_t axis,int32_t discrete){
   
 
-    pointer_state.event_type = WL_POINTER_EVENT_AXIS_DISCRETE;
-    pointer_state.axis[axis].valid = 1;
-    pointer_state.axis[axis].discrete = discrete; 
+    pointer_state->event_type = WL_POINTER_EVENT_AXIS_DISCRETE;
+    pointer_state->axis[axis].valid = 1;
+    pointer_state->axis[axis].discrete = discrete; 
   
 };
 
@@ -167,29 +171,8 @@ void keyboard_keymap(void *data,struct wl_keyboard *wl_keyboard,
 void keyboard_enter(void *data, struct wl_keyboard *wl_keyboard,
                    uint32_t serial,struct wl_surface *surface,
                                        struct wl_array *keys){
-    if(keys->size == 0)
-       return;
 
-   return;
-
-  char *pressed_key = nullptr;
-
-  for(size_t size = 0 ; size < keys->size ; size++){
-   pressed_key = (char*)keys->data  + size;
-
-        char buf[128];
-        xkb_keysym_t sym = xkb_state_key_get_one_sym(
-                        key_xkb_state, *pressed_key + 8);
-        
-        xkb_keysym_get_name(sym, buf, sizeof(buf));
-   
-//    std::cout<<buf<<std::endl;
-
-        xkb_state_key_get_utf8(key_xkb_state,
-                        *pressed_key + 8, buf, sizeof(buf));
-    std::cout<<sizeof(xkb_keysym_t)<<std::endl;
-
-  };
+  key_state = statemanager::getNextKeyboardQueue();
 
 };
 
@@ -202,22 +185,19 @@ void keyboard_key(void *data,struct wl_keyboard *wl_keyboard,
                                   uint32_t serial,uint32_t time,
                                         uint32_t key,uint32_t state){
 
-   char buf[128];
 
+   key_state = statemanager::getNextKeyboardQueue();
+   xkb_keysym_t sym = xkb_state_key_get_one_sym(key_xkb_state, key + 8);
+   key_state->serial = serial;
+   key_state->key = sym;
 
     switch(state){   
     case 	WL_KEYBOARD_KEY_STATE_PRESSED: 
-        xkb_keysym_t sym = xkb_state_key_get_one_sym(key_xkb_state, key + 8);
-      
-        if(sym < 0xff){
-          std::cerr<<std::hex<<"0x"<<sym<<" , "; 
-        }else{
-          std::cerr<<"special keys"<<sym;
-        } 
-          
-    
-     break;
-
+        key_state->event_type = WL_KEYBOARD_KEY_ON_PRESS;           
+    break;
+    case WL_KEYBOARD_KEY_STATE_RELEASED:
+        key_state->event_type = WL_KEYBOARD_KEY_ON_RELEASE;
+    break;
   };
 
 };
@@ -232,10 +212,7 @@ void keyboard_modifiers(void *data,struct wl_keyboard *wl_keyboard,
 };
 
 void keyboard_repeat_info(void *data,struct wl_keyboard *wl_keyboard,
-                                            int32_t rate,int32_t delay){
-
-    std::cerr<<"Rate : "<<rate<<"delay : "<<delay;
-};
+                                            int32_t rate,int32_t delay){};
 
 
 const struct wl_keyboard_listener keyboard_listener = {
@@ -299,20 +276,13 @@ const struct wl_shm_listener wl_shm_callback = {
 
 static void wl_output_geometry(void *data, struct wl_output *wl_output, int32_t x,int32_t y,
 			 int32_t physical_width,int32_t physical_height,int32_t subpixel,const char *make,
-			 const char *model,int32_t transform){
-//  std::cout<<"[hello] "<<model<<std::endl;
-}
-
+			 const char *model,int32_t transform){};
 static void wl_output_mode(void *data, struct wl_output *wl_output, uint32_t flags,
-		     int32_t width,int32_t height,int32_t refresh){
-  std::cout<<"[geo]"<<width <<" : "<<height<<std::endl;
-}
-
-static void wl_output_done(void *data, struct wl_output *wl_output){}
-static void wl_output_scale (void *data,struct wl_output *wl_output, int32_t factor){}
-static void wl_output_name (void *data,struct wl_output *wl_output,const char *name){}
-static void wl_output_description (void *data,struct wl_output *wl_output,const char *description){}
-
+		     int32_t width,int32_t height,int32_t refresh){};
+static void wl_output_done(void *data, struct wl_output *wl_output){};
+static void wl_output_scale (void *data,struct wl_output *wl_output, int32_t factor){};
+static void wl_output_name (void *data,struct wl_output *wl_output,const char *name){};
+static void wl_output_description (void *data,struct wl_output *wl_output,const char *description){};
 
 const struct wl_output_listener display_output_listener = {
   .geometry = wl_output_geometry,

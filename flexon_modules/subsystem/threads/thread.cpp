@@ -2,6 +2,7 @@
 #include "../../components/View.hpp"
 #include "../layoutmanager/layout.hpp"
 #include "../flexon_commits.hpp"
+#include "../statemanager/statemanager.hpp"
 #include "./thread.hpp"
 #include <pthread.h>
 #include <iostream>
@@ -29,7 +30,9 @@ static void* __renderer__wrapper(void *args){
 };
 
 static void* __state_wrapper__(void *args){
-return nullptr;
+ statemanager manager;
+ manager.dispatchEvents();
+ return nullptr;
 };
 
 static void* __app_wrapper__(void *args){
@@ -39,9 +42,14 @@ static void* __app_wrapper__(void *args){
 
   //void *node = app_main();
   
- initial_commit(app_main,post_startup);
-
-  
+  initial_commit(app_main,post_startup);
+/*
+  while(1){
+    //sem_wait(statemanger::signaldispatchEvent);
+    //statemanager::onpress();
+//  callfunctionaddirectedbystatemanager();
+  }
+  */
   return nullptr;
 
 };
@@ -49,7 +57,7 @@ static void* __app_wrapper__(void *args){
 void __call__thread__subsystem(){
 
   pthread_attr_t thread_attr;
-  pthread_t id[2];
+  pthread_t id[3];
 
   struct commit_wm commitwm;
   commitwm.name = (char *)"hello";
@@ -64,11 +72,10 @@ void __call__thread__subsystem(){
    }
   */
    
-  //int __app_process = pthread_create(&id[0],&thread_attr,__window_manager_wrapper,&commitwm); 
-  int __state_process = pthread_create(&id[1],&thread_attr,__app_wrapper__,&commitwm); 
+  int __wm_process = pthread_create(&id[0],&thread_attr,__window_manager_wrapper,&commitwm); 
+  int __state_process = pthread_create(&id[1],&thread_attr,__state_wrapper__,&commitwm); 
+
   pthread_attr_destroy(&thread_attr);  
-  pthread_join(id[1], NULL);
+  pthread_join(id[0], NULL);
     
 };
-
-

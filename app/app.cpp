@@ -7,10 +7,10 @@
 
 void post_startup(fiber *wrap){
  modifier root;
-  root.context(wrap).display('f').layoutDirection('c')
+  root.context(wrap).display('f').layoutDirection('r')
     .windowDimension(500.0f,500.0f)
-    .padding({0.0f,20.0f,20.0f,10.0f})
-    .borderWidth({10.0f,0.0f,20.0f,0.0f})
+    .padding({20.0f,20.0f,20.0f,20.0f})
+    .borderWidth({20.0f,10.0f,40.0f,30.0f})
     .commitContext();
 };
 
@@ -18,22 +18,32 @@ void app_main(){
 
 View([](fiber *wrap){
      modifier style;
-     style.context(wrap).display('f').layoutDirection('c').flex(1.0f).commitContext();
+     style.context(wrap)
+          .display('f')
+          .layoutDirection('r')
+          .padding({20.0f,20.0f,20.0f,20.0f})
+          .borderWidth({20.0f,10.0f,40.0f,30.0f})
+          .flex(1.0f).commitContext();
   },[](){
-/*
+     modifier::onPress([](void *args){
+      std::cout<<"hello world"<<std::endl;
+     });
+     modifier::commitEvent();
+  
 View([](fiber *wrap){
-     modifier style;
-     style.context(wrap).flex(1.0f).layoutDirection('r').commitContext();
+    modifier style;
+    style.context(wrap).display('f').flex(1.0f).commitContext();
   },[](){
-   });
-*/
+ 
+ });
 
 });
 
 View([](fiber *wrap){
     modifier style;
-    style.context(wrap).display('n').flex(1.0f).commitContext();
+    style.context(wrap).display('n').flex(0.0f).commitContext();
   },[](){
+ 
  });
 
 }

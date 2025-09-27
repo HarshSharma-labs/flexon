@@ -14,6 +14,8 @@ namespace strings{
 namespace decorator{
  bool checkZero(uint8_t __vsrc , uint32_t stride);
  void setbits(uint8_t *__vsrc,float *param, uint32_t stride);
+ bool emptyEntity(void *which , size_t size);
+
 };
 namespace ndc{
 

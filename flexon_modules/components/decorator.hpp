@@ -4,6 +4,7 @@
 #include "./View.hpp"
 #include "./base.hpp"
 #include "../utilities/utility.hpp"
+#include "../subsystem/statemanager/statemanager.hpp"
 #include <unordered_map>
 #include <iostream>
 #include <cstddef>
@@ -52,7 +53,7 @@ public:
      paint.display = DISPLAY_NONE;
      paint.visible = VIEW_HIDE;
      memset(&paint,'\0',sizeof(base_paint));
-
+     activeFiberId = ctx->fiberid;
      return *this;
    };
 
@@ -312,19 +313,40 @@ public:
     return tmp; 
   };
 
+  static void onPress(void(*callback)(void *args)){
+    tmpcallbackholder.onpress = callback;
+  };
+  static void onLongPress(void(*callback)(void *args)){
+    tmpcallbackholder.onLongPress = callback;
+  };
+  static void onHover(void(*callback)(void *args)){
+    tmpcallbackholder.onHover = callback;
+  };
+
+  static void setActiveFiberId(fiber *again){
+    mine = again;
+  };
+
+  static void commitEvent(){
+    if(mine->paint != nullptr){
+    statemanager::registerEventCallback(mine, tmpcallbackholder);
+    }
+  };
 
 private:
 
-  fiber *mine = nullptr;
+  static inline fiber *mine = nullptr;
   base_paint paint;
   //base_geo paint.geometry;
+
+  static inline callbackfunction tmpcallbackholder;
 
   /*
   * ppaint owns all the base_paint created within the flexon.
   * it's primary function if to have fast search of view data.
   * and allows synchronisation of latest paint among the view.
   */
-
+  static inline uint32_t activeFiberId = 0;
   static inline std::unordered_map<uint32_t,base_paint*> ppaint;
  // static inline std::vector<normal_fill*> fill;
  // static inline std::vector<gradient_color*> gradient_fill;

@@ -33,8 +33,8 @@ static void pointer_enter (void *data, struct wl_pointer *wl_pointer,uint32_t se
     
     pointer_state = statemanager::getNextPointerQueue(); 
     pointer_state->event_type = WL_POINTER_EVENT_ENTER;
-    pointer_state->x = surface_x;
-    pointer_state->y = surface_y;
+    pointer_state->x = wl_fixed_to_double(surface_x);
+    pointer_state->y = wl_fixed_to_double(surface_y);
     pointer_state->serial = serial;
    
       
@@ -55,8 +55,10 @@ static void pointer_motion(void *data,struct wl_pointer *wl_pointer,
 
 
     pointer_state->event_type = WL_POINTER_EVENT_MOTION;
-    pointer_state->x = surface_x;
-    pointer_state->y = surface_y;
+ 
+    pointer_state->x = wl_fixed_to_double(surface_x);
+    pointer_state->y = wl_fixed_to_double(surface_y);
+
     pointer_state->time = time;
   
 

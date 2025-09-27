@@ -1,5 +1,7 @@
 #ifndef __FLEXON_COMPONENT_BASE__
 #define __FLEXON_COMPONENT_BASE__
+
+#include "../subsystem/windowManager/wayland-callback.hpp"
 #include <stdint.h>
 #include "./matrices.hpp"
 #include "./hook.hpp"
@@ -149,13 +151,21 @@ struct sweep_gradient{
 
 
 typedef struct callback{
- void(*onPress)(void *args);
- void(*onhover)(void *args);
+ vec4<float> outerRange;
+ vec4<float> innerRange;
+ uint32_t fiberid;
 }callback;
+
+typedef struct callbackfunction{
+ void(*onpress)(void *args);
+ void(*onLongPress)(void *args);
+ void(*onHover)(void *args);
+}callbackfunction;
 
 
 typedef struct base_quad{
-  // (x,y) of all four points in ndc
+  // (x,y) of all four pdd
+  // ints in ndc
   mat4x2 <float> NDC;
   // SDF - eval quad
   vec4 <float> z;
@@ -164,6 +174,14 @@ typedef struct base_quad{
 typedef struct base_geo{
  // x , y , width , height
  vec4 <float> dimension;
+  
+ /* x , y , width , height
+  * bound are primarly used of 
+  * handling touch event in
+  * system 
+ */
+ vec4<float>  bound;
+
  // vec4 Border width
  vec4 <float>borderWidth;
  // vec4 Margin of the quad
@@ -175,6 +193,21 @@ typedef struct base_geo{
 }base_geo;
 
 
+enum captured_event_type{
+  EVENT_TYPE_KEYBOARD = 1,
+  EVENT_TYPE_POINTER,
+};
+
+struct event_wrapper{
+  uint32_t event_type;
+  pointer_event epointer;
+  key_event ekey;
+};
+
+struct fiber_event_wrapper{
+ uint32_t fiber_id;
+ base_geo *geometry;
+};
 
 typedef struct base_paint{
    base_geo geometry;

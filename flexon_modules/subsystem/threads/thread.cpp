@@ -64,6 +64,8 @@ void __call__thread__subsystem(){
   commitwm.width = 500;
   commitwm.height = 500;
   pthread_attr_init(&thread_attr);
+  statemanager::init();
+
 
   /*
   if (sem_init(&commitwm.signal, 0, 1) == -1) {
@@ -71,9 +73,10 @@ void __call__thread__subsystem(){
         exit(EXIT_FAILURE);
    }
   */
-   
-  int __wm_process = pthread_create(&id[0],&thread_attr,__window_manager_wrapper,&commitwm); 
   int __state_process = pthread_create(&id[1],&thread_attr,__state_wrapper__,&commitwm); 
+  int __wm_process = pthread_create(&id[0],&thread_attr,__window_manager_wrapper,
+                                    &commitwm); 
+   int __app_process = pthread_create(&id[2],&thread_attr,__app_wrapper__,&commitwm);
 
   pthread_attr_destroy(&thread_attr);  
   pthread_join(id[0], NULL);

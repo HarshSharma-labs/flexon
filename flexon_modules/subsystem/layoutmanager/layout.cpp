@@ -2,6 +2,7 @@
 #include "../../utilities/utility.hpp"
 #include "./layout.hpp"
 #include <bitset>
+#include <algorithm>
 #include <iostream>
 
 static uint32_t auxcounter = 0;
@@ -54,6 +55,7 @@ static void calculatelayout(base_paint *ppaint, fiber *childs) {
               UNITYPE_STRIDE_PADDING);
     stripvec4(ppaint.geometry.borderWidth, parentstripped, ppaint.flagborrad,
               UNITYPE_STRIDE_BORDERWIDTH);
+    ppaint.geometry.bound = parentstripped;
 
     /*
      * px = parent position-X.
@@ -130,12 +132,13 @@ void deepCloneFiber(fiber *which) {
   fiber *tmp = new fiber;
   tmp->clone = which;
   which->clone = tmp;
-  tmp->fiberid = utility::strings::fnv_1hash(auxcounter);
+  tmp->fiberid = which->fiberid;// utility::strings::fnv_1hash(auxcounter);
   tmp->paint = modifier::deepClone(which->paint, tmp->fiberid);
 };
 
 void buildfibertree(void (*node)(), fiber *parent) {
 
+  modifier::setActiveFiberId(parent);
   node();
   pview *view = gettop();
   if (view == nullptr)
@@ -190,4 +193,49 @@ void initial_commit(void (*node)(), void (*main)(fiber *wrap)) {
   utility::ndc::setNDCmat(fibermain->paint->geometry.dimension.z,
                           fibermain->paint->geometry.dimension.w);
   buildfibertree(node, fibermain);
+  layoutmanager::sortEventView();
 };
+
+void layoutmanager::sortEventView(){
+auto &dataRef = statemanager::returnViewData();
+  int size = dataRef.size();
+   if(size == 0 || size == 1)
+     return;
+};
+
+
+inline bool checkPress(float x , float y , vec4<float> &upperGeo){
+float ptopRight = upperGeo.x + upperGeo.w;
+float pbottomLeft = upperGeo.y + upperGeo.z;
+
+if(upperGeo.x > x || upperGeo.y > y){
+     return false;
+  }
+
+if(ptopRight > x && pbottomLeft > y)
+   return true;
+
+return false;
+
+};
+
+// here ref is the view data to check;
+uint32_t layoutmanager::CheckBound(float x , float y,std::vector<fiber_event_wrapper> &ref ){
+  
+     
+  for(auto &itr : ref){
+   bool emptybound = utility::decorator::emptyEntity(&itr.geometry->bound,
+                                                     modifier::vec4floatsize64); 
+   bool isvalid = checkPress(x,y,itr.geometry->dimension);
+  if(isvalid)
+      if(!emptybound)
+           isvalid = checkPress(x,y,itr.geometry->bound);
+
+    if(!isvalid)
+        return itr.fiber_id;
+  }
+  return 0;
+};
+
+
+

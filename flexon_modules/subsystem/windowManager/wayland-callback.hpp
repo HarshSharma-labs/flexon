@@ -35,7 +35,7 @@ struct pointer_event{
   uint32_t event_type;
   uint32_t axis_source;
 
-  wl_fixed_t x , y;
+  float x , y;
   uint32_t button,state;
   uint32_t time,serial;
 

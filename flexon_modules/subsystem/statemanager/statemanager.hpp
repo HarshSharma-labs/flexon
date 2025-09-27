@@ -14,26 +14,14 @@
 #include "../windowManager/wayland-callback.hpp"
 #include "../../components/base.hpp"
 
-#define POINTER_EVENT_QUEUE_SIZE 4
-#define POINTER_EVENT_SUBMIT_SIZE 2
-#define KEYBOARD_EVENT_QUEUE_SIZE 4
-#define KEYBOARD_EVENT_SUBMIT_SIZE 2
+#define EVENT_QUEUE_SIZE 10
+#define EVENT_QUEUE_HALF_SIZE 2
 #define POINTER_VIEW_STARTUP_SIZE 10
 #define POINTER_EVENT_DISPATCH_THRESH 10
-#define POINTER_FUNC_SIZE 10
+#define DEFAULT_PRESS_QUEUE_SIZE 10
+
 #define SIC static inline
 #define SCE static constexpr
-/*
-*  event queue cyclic type:
-*  
-*  _________________________________________________
-* |                     | submitted queue to the   |
-* | current in progress | dispatcher to process    |
-* |_____________________|__________________________|
-*  0                    2                          4
-* 
-* and vice-versa cycle repeats;
-*/
 
 
 class statemanager{
@@ -41,7 +29,10 @@ public:
   statemanager(); 
  
    void dispatchEvents();
-  // void stackPointerEvent();
+   static void registerEvents(struct event_wrapper *event , int index);
+   void stackPointerEvent(struct pointer_event &event,float &px,
+                           float &py);
+   void flushKeyboardBuffer(struct key_event &event);
 // void dispatchKeyboardEvent();
 // void dispatchwip();
 // void fibertorender();
@@ -49,34 +40,46 @@ public:
  static pointer_event* getNextPointerQueue();
  static key_event* getNextKeyboardQueue();
 
+ //must be called first;
+ static void init(){
+   statemanager::pointerEventViews.reserve(DEFAULT_PRESS_QUEUE_SIZE);
+  };
+ static void registerEventCallback(fiber *which , callbackfunction callback){
+    statemanager::togglepointer = true;
+    statemanager::pressCallback[which->fiberid] = callback;
+    struct fiber_event_wrapper tmp = {.fiber_id = which->fiberid, 
+                                     .geometry = &which->paint->geometry };
+
+    statemanager::pointerEventViews.push_back(tmp);
+  };
+  static std::vector<fiber_event_wrapper> &returnViewData(){
+   return pointerEventViews; 
+  };  
+
 private:
 
-SCE int pointereventsize64 = sizeof(struct pointer_event) / 
-                                          sizeof(uint64_t);
-
-SCE int keyeventsize64 = sizeof(key_event) / sizeof(uint64_t);
+SCE int KeventSize64 = sizeof(struct key_event) / sizeof(uint64_t);
+SCE int PeventSize64 = sizeof(struct pointer_event) / sizeof(uint64_t);
+SCE int eventWrapperSize64 = sizeof(struct event_wrapper) / sizeof(uint64_t);
 
 SIC int cyclepointer = 0;
 SIC int cycleKeyboard = 0;
-SIC int stridepointer = 0;
+
 SIC bool togglepointer = false;
 SIC bool togglekeyboard = false;
-
+SIC bool EventContinue = false;
 SIC sem_t syncstatemanager;
-SIC struct pointer_event *Pevent;
-SIC struct pointer_event queuePointer[POINTER_EVENT_QUEUE_SIZE];
-SIC struct key_event *Kevent;
-SIC struct key_event queueKeyboard[KEYBOARD_EVENT_QUEUE_SIZE];
+SIC sem_t syncback;
+SIC struct event_wrapper *Pevent;
+SIC struct event_wrapper eventQueue[EVENT_QUEUE_SIZE];
 
 SIC sem_t signaldispatchEvent;
-//SIC void(*onpress)()[POINTER_FUNC_SIZE];
+SIC int dispatchpointerfrom = 0;
+SIC std::unordered_map<uint32_t,callbackfunction> pressCallback;
+//SIC std::unordered_map<uint32_t,fiber *> keyboardCallback;
+//SIC std::unordered_map<uint32_t,fiber *> fiberStates;
 
-SIC std::unordered_map<uint32_t,fiber *> onpressCallback;
-SIC std::unordered_map<uint32_t,fiber *> onlongpressCallback;
-SIC std::unordered_map<uint32_t,fiber *> keyboardCallback;
-SIC std::unordered_map<uint32_t,fiber *> fiberStates;
-
-//SIC std::vector<struct wrapperPointerCallback> pointerEventViews;
+SIC std::vector<fiber_event_wrapper> pointerEventViews;
 
 };
 

@@ -3,10 +3,10 @@
 
 #include <iostream>
 
-#if defined(RENDERER_VULKAN)
+
 #include "./vulkan.hpp"
- #define RENDERER_CLASS flexon_vulkan_renderer
-#endif
+ #define RENDERER_CLASS flexonrenderer 
+
 
 
 typedef RENDERER_CLASS renderSubsystem;

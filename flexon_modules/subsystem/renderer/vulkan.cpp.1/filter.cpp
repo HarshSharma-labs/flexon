@@ -33,6 +33,7 @@ bool flexon_vulkan_renderer::filter_physical_device(VkSystem* vksystem, std::vec
     std::multimap<int, physical_device_conf> sorted_device;
     std::vector<physical_device_conf> device_conf(devices_list.size());
     int i = 0;
+
     for (const auto& device : devices_list) {
         int score = score_device(vksystem, &device_conf[i], device);
         std::cout << "[DEVICE SCORE] score of devices : " << score << '\n';

@@ -155,19 +155,12 @@ static const struct wl_registry_listener display_registry_listener = {
 int waylandWM::create_commit(struct commit_wm* commit)
 {
 
-    if(commit->width <= 0 || commit->height <= 0){
-     std::cout<<"invalid window dimensions provided.\n"
-                "Exiting flexon;"<<std::endl;
-      return -1;
-    };
 
     if(keyboard_init() != 0){
        std::cout<<"[PANIC] Cannot create a keyboard system";
        return -1;
     }
-    wm_config.dwidth = commit->width; 
-    wm_config.dheight =  commit->height;
-    
+     
 
     wm_config.app_name = commit->name;
     wm_config.display = wl_display_connect(NULL);
@@ -198,24 +191,37 @@ int waylandWM::create_commit(struct commit_wm* commit)
     wl_surface_commit(wm_config.surface);
    
     while (wl_display_dispatch(wm_config.display) != -1 && !wm_config.configured);
- 
+
     xdg_toplevel_add_listener(wm_config.xdg_surface_toplevel, &xdg_surface_callback_listener_toplevel, &wm_config);
-    xdg_toplevel_set_title(wm_config.xdg_surface_toplevel, commit->name);
-    xdg_toplevel_set_app_id(wm_config.xdg_surface_toplevel, commit->name);
-    xdg_toplevel_set_min_size(wm_config.xdg_surface_toplevel, 200, 200);
-    xdg_toplevel_set_max_size(wm_config.xdg_surface_toplevel,wm_config.display_width, wm_config.display_height);
-    
-    commit->rc.fheight = wm_config.display_height;
-    commit->rc.fwidth = wm_config.display_width;
+
+  
+       xdg_toplevel_set_max_size(wm_config.xdg_surface_toplevel,
+                                wm_config.display_width, wm_config.display_height);
+   
+
+    commit->rc.max.x = static_cast<float>(wm_config.display_height);
+    commit->rc.max.y = static_cast<float>(wm_config.display_width);
+    commit->rc.umax.x = wm_config.display_height;
+    commit->rc.umax.y = wm_config.display_width;
     commit->rc.pixels = wm_config.pixels;
     commit->rc.display = wm_config.display;
     commit->rc.surface = wm_config.surface;
+     
     return 0;
 }
 
-void waylandWM::dispatchEvent()
+void waylandWM::dispatchEvent(struct commit_wm *commit)
 {
+    wm_config.dwidth = static_cast<uint32_t>(commit->required.x);
+    wm_config.dheight = static_cast<uint32_t>(commit->required.y);
+    xdg_toplevel_set_title(wm_config.xdg_surface_toplevel, commit->name);
+    xdg_toplevel_set_app_id(wm_config.xdg_surface_toplevel, commit->name);
+    xdg_toplevel_set_min_size(wm_config.xdg_surface_toplevel, 
+                              commit->min.x, commit->min.y);
+
+  
     allocate_shm(&wm_config);
+
     while (wl_display_dispatch(wm_config.display) && wm_config.running){
       if(wm_config.resized == true){
         resize(&wm_config);

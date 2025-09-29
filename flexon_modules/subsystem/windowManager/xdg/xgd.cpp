@@ -20,8 +20,7 @@ static void xdg_surface_callback_configure(void* data, struct xdg_surface* xdg_s
 {
     struct window_state *wayland_config = (window_state *)data;
     xdg_surface_ack_configure(xdg_surface, serial);
-    wayland_config->configured = true;
-}
+ }
 
 const struct xdg_surface_listener xdg_surface_callback_listener = {
     .configure = xdg_surface_callback_configure
@@ -81,6 +80,8 @@ static void xdg_output_logical_size (void *data,struct zxdg_output_v1 *zxdg_outp
   info->display_width = width;
   info->stride = width * sizeof(uint32_t);
   info->size = info->stride * height;
+  info->configured = true;
+
 };
 
 static void xdg_output_done (void *data,struct zxdg_output_v1 *zxdg_output_v1){

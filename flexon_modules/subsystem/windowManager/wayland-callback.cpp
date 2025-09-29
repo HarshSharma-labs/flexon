@@ -46,6 +46,7 @@ static void pointer_leave(void *data,struct wl_pointer *wl_pointer,
 
     pointer_state->event_type = WL_POINTER_EVENT_LEAVE;
     pointer_state->serial = serial;
+    std::cout<<"mouse leave"<<std::endl;
 
 };
 
@@ -106,7 +107,6 @@ static void pointer_axis_stop(void *data, struct wl_pointer *wl_pointer,
     pointer_state->event_type = WL_POINTER_EVENT_AXIS_STOP;
     pointer_state->time = time;
     pointer_state->axis[axis].valid = 1;
-     
 };
 
 static void pointer_axis_discrete(void *data, struct wl_pointer *wl_pointer,

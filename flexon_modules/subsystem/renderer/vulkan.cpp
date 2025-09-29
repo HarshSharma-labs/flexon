@@ -1,12 +1,81 @@
-#include "./shaders/shader_code.hpp"
 #include "./vulkan.hpp"
+#include "./shaders/shader_code.hpp"
 #include <shaderc/shaderc.hpp>
-#include <wayland-client.h>
 
-bool vksystem_down = false;
 
-const uint32_t indexed_data[] = {0, 1, 2, 2, 3, 0};
-const uint32_t indexed_data1[] = {4, 5, 6, 6, 7, 4};
+struct DeletionQueue
+{
+	std::vector<VkImage> image;
+  std::vector<VkImageView> imgview;
+  std::vector<VkCommandBuffer> cmdbuf;
+  std::vector<VkFence> fence;
+  std::vector<VkShaderModule> shader;
+  std::vector<VkBuffer> buffer;
+  std::vector<VkDeviceMemory> memory;
+  std::vector<VkPipeline> pipeline;
+  VkDevice mine;
+
+  void initlise(VkDevice dev){
+    mine = dev;
+    image.reserve(100);
+    imgview.reserve(100);
+    cmdbuf.reserve(100);
+    fence.reserve(100);
+    shader.reserve(100);
+    buffer.reserve(100);
+    memory.reserve(10);
+    pipeline.reserve(10);
+  };
+
+  void pushshader(VkShaderModule mod){
+    shader.push_back(mod);
+  };
+  void pushfence(VkFence fen){
+    fence.push_back(fen);
+  };
+  void pushcmdbuf(VkCommandBuffer buf){
+    cmdbuf.push_back(buf);
+  }
+  void pushimage(VkImage img){
+    image.push_back(img);
+  };
+  void pushimageview(VkImageView view){
+    imgview.push_back(view);
+  };
+  
+  void pushbuffer(VkBuffer tmp){
+    buffer.push_back(tmp);
+  };
+  
+  void pushmemory(VkDeviceMemory tmp){
+    memory.push_back(tmp);
+  };
+  
+	void flush() {
+   for(auto &itr: shader)
+     vkDestroyShaderModule(mine,itr,VK_NULL_HANDLE);
+	
+   for(auto &itr: fence)
+     vkDestroyFence(mine,itr,VK_NULL_HANDLE);
+  
+    for(auto &itr: imgview)
+     vkDestroyImageView(mine , itr, VK_NULL_HANDLE);
+    
+    for(auto &itr: image)
+     vkDestroyImage(mine,itr,VK_NULL_HANDLE);
+
+    for(auto &itr: buffer)
+     vkDestroyBuffer(mine,itr,VK_NULL_HANDLE);
+  
+  
+    for(auto &itr:memory)
+      vkFreeMemory(mine, itr, VK_NULL_HANDLE);
+
+  }
+
+};
+
+struct DeletionQueue delQue;
 
 static VkDeviceSize align_offset(VkDeviceSize alignment, VkDeviceSize value)
 {
@@ -15,231 +84,200 @@ static VkDeviceSize align_offset(VkDeviceSize alignment, VkDeviceSize value)
     return (value + alignment - 1) & ~(alignment - 1);
 }
 
-void flexon_vulkan_renderer::allocate_required(VkSystem* vksystem)
-{
-   
-    vksystem->render_pool.frame_buffer = new render_frame_buffer[vksystem->render_pool.count];
-    vksystem->render_pool.image_cmd_buffer = new VkCommandBuffer[vksystem->render_pool.count];
-};
 
-void flexon_vulkan_renderer::begin_shader_recording(VkSystem* vksystem, enum shader_type type)
+#ifndef NDEBUG
+static bool checkValidationLayerSupport(const char** layerName, const int* count)
 {
 
-    if (vksystem->shader_record_state == nullptr) {
-        vksystem->shader_record_state = new vk_shader;
-    } else {
-        vksystem->shader_record_state->next = new vk_shader;
-        vksystem->shader_record_state = vksystem->shader_record_state->next;
+    uint32_t layersCount { 0 };
+
+    vkEnumerateInstanceLayerProperties(&layersCount, nullptr);
+    std::vector<VkLayerProperties> availableLayers(layersCount);
+    vkEnumerateInstanceLayerProperties(&layersCount, availableLayers.data());
+    for (int i = 0; i < *count; i++) {
+        bool layerFound = false;
+        for (const auto& layerProperties : availableLayers) {
+            if (strcmp(layerName[i], layerProperties.layerName) == 0) {
+                layerFound = true;
+                break;
+            }
+        }
+        if (!layerFound) { 
+            return false;
+        }
     }
-    vksystem->shader_record_state->shader_type = type;
-
-    return;
-};
-
-void flexon_vulkan_renderer::begin_pipeline_recording(VkSystem* vksystem, pipeline_info *info)
-{
-
-   static struct {
-    VkBuffer *vtx_buf;
-    VkBuffer *frg_buf;
-    VkBuffer *idx_buf;
-    void *vtx_data;
-    void *frg_data;
-    void *idx_data;
-  }aux;
-
-    
-    if (vksystem->pipeline_record_state == nullptr) {
-        vksystem->pipeline_record_state = new vk_pipeline;
-    } else {
-        vksystem->pipeline_record_state->next = new vk_pipeline;
-        vksystem->pipeline_record_state = vksystem->pipeline_record_state->next;
-    }
-   
-    vksystem->pipeline_record_state->type = info->ptype;
-    begin_shader_recording(vksystem, info->stype);
-
-    if (!load_shader(vksystem, info->vtx_code, info->frag_code)) {
-        //   return false;
-    }
-    if (!create_shader_module(vksystem)) {
-        // return false;
-    }
-
-    vksystem->pipeline_record_state->shader = end_shader_recording(vksystem);
-
-    aux.vtx_buf = &vksystem->pipeline_record_state->shader->input.vertex_buffer;
-    aux.frg_buf = &vksystem->pipeline_record_state->shader->input.uniform_buffer;
-    aux.idx_buf = &vksystem->pipeline_record_state->shader->input.index_buffer;
-    
-
-    memcpy(&vksystem->shader_record_state->input, &info->input, sizeof(shader_input));    
-
-    start_memory_recording(vksystem,VK_MEMORY_TYPE_SHADER_MAPPED);
-
-    buffer_create_info buffer_info_vertex = {
-     .layout_type = MEM_PART_VERTEX_BUF,
-     .usage_mode = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-     .flags = 0,
-     .size = vksystem->pipeline_record_state->shader->input.vertex_size
-    };
-
-    *aux.vtx_buf = create_buffer(vksystem,&buffer_info_vertex);
-
-    buffer_create_info buffer_info_indexed = {
-     .layout_type = MEM_PART_INDEXED_BUF,
-     .usage_mode = VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-     .flags = 0,
-     .size = vksystem->pipeline_record_state->shader->input.vertex_size
-    };
-
-    *aux.idx_buf = create_buffer(vksystem,&buffer_info_indexed);
-
-
-    buffer_create_info buffer_info_uniform = {
-     .layout_type = MEM_PART_UNIFORM_BUF,
-     .usage_mode = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-     .flags = 0,
-     .size = vksystem->pipeline_record_state->shader->input.uniform_size
-    };
-    create_buffer(vksystem,&buffer_info_uniform);
-    end_memory_recording(vksystem);
-    
-    char *mapped_data;
-    vkMapMemory(
-                vksystem->virtual_device,
-                vksystem->mem_record_state->memory,
-                0,
-                VK_WHOLE_SIZE,
-                0,
-                (void**)&mapped_data
-              );
-
-   for(auto *itr = vksystem->mem_record_state->memory_layout ; itr != nullptr ; itr = itr->next){
-        switch(itr->part_type){
-          case MEM_PART_VERTEX_BUF:
-          aux.vtx_data = mapped_data + itr->memory_offset;
-          break;
-          case MEM_PART_UNIFORM_BUF:
-          aux.frg_data = mapped_data + itr->memory_offset;
-          break;
-          case MEM_PART_INDEXED_BUF:
-          aux.idx_data = mapped_data + itr->memory_offset;
-         break;
-       }
-    }
-
-    vksystem->pipeline_record_state->shader->input.vertex_data = aux.vtx_data;
-    vksystem->pipeline_record_state->shader->input.uniform_data = aux.frg_data;
-    vksystem->pipeline_record_state->shader->input.index_data = aux.idx_data;
-
-
-};
-
-vk_pipeline* flexon_vulkan_renderer::end_pipeline_recording(VkSystem* vksystem)
-{
-    return vksystem->pipeline_record_state;
-};
-
-bool flexon_vulkan_renderer::create_shader_module(VkSystem* vksystem)
-{
-
-    create_struct(vert_module_create_info, VkShaderModuleCreateInfo,
-        .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
-        .pNext = NULL,
-        .codeSize = vksystem->shader_record_state->code_size_vert,
-        .pCode = vksystem->shader_record_state->compiled_code_vert);
-
-    create_struct(frag_module_create_info, VkShaderModuleCreateInfo,
-        .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
-        .pNext = NULL,
-        .codeSize = vksystem->shader_record_state->code_size_frag,
-        .pCode = vksystem->shader_record_state->compiled_code_frag);
-
-    vkCreateShaderModule(vksystem->virtual_device, &vert_module_create_info,
-        NULL, &vksystem->shader_record_state->shader_vert);
-
-    vkCreateShaderModule(vksystem->virtual_device, &frag_module_create_info,
-        NULL, &vksystem->shader_record_state->shader_frag);
-    std::cout << vksystem->shader_record_state->code_size_frag << std::endl;
-
     return true;
 }
 
-vk_shader* flexon_vulkan_renderer::end_shader_recording(VkSystem* vksystem)
-{
+#endif
 
-    delete vksystem->shader_record_state->compiled_code_vert;
-    delete vksystem->shader_record_state->compiled_code_frag;
+struct sdev flexonrenderer::selectPhysicalDevice(VkInstance instance , auto &devices){
 
-    return vksystem->shader_record_state;
+  std::multimap<int,sdev> sortedmap;
+  struct sdev dev = {0};
+  for(auto &device : devices){
+      dev.dev = device;
+      int score = scoreDevice(device,dev);
+      std::cout<<"[DEVICE] Score of device "<<score<<std::endl;
+      sortedmap.insert({score,dev});
+   };
+ 
+  if (sortedmap.rbegin()->first > 0){
+     return sortedmap.rbegin()->second;
+  }
+
+  return dev;
 };
 
+int flexonrenderer::scoreDevice(VkPhysicalDevice device , sdev &store){
+  
+   int evaluated_score = 0;
+   uint32_t deviceSupportedExtension = 0;
+ 
+    create_struct(dev_properties, VkPhysicalDeviceProperties);
+    create_struct(physical_device_feature, VkPhysicalDeviceFeatures);
 
-void flexon_vulkan_renderer::start_memory_recording(VkSystem* vksystem, enum memory_type usage)
-{
-    if (vksystem->mem_record_state == nullptr) {
-        vksystem->mem_record_state = new vk_memory;
-    } else {
-        vksystem->mem_record_state->next = new vk_memory;
-        vksystem->mem_record_state = vksystem->mem_record_state->next;
+    vkGetPhysicalDeviceProperties(device, &dev_properties);
+    vkGetPhysicalDeviceFeatures(device, &physical_device_feature);
+
+    vkEnumerateDeviceExtensionProperties(device, NULL, &deviceSupportedExtension, NULL);
+    std::vector<VkExtensionProperties> ext(deviceSupportedExtension);
+    vkEnumerateDeviceExtensionProperties(device, NULL, &deviceSupportedExtension, ext.data());
+
+
+  for (int i = 0; i < extensionCount; i++) {
+        bool layerFound = false;
+        for (const auto& itr : ext) {
+            if (strcmp(extensionName[i], itr.extensionName) == 0) {
+                layerFound = true;
+                std::cout<<"[INFO] Extension supported : "<<extensionName[i]<<std::endl;
+                break;
+            }
+        }
+
+   };
+    store.type = dev_properties.deviceType;
+    evaluated_score += 1000;
+
+    if (!physical_device_feature.geometryShader) {
+        evaluated_score -= 10000;
+        return evaluated_score;
     }
-    vksystem->mem_record_state->memory_usage = usage;
+
+  
+    switch (dev_properties.deviceType) {
+
+    case VK_PHYSICAL_DEVICE_TYPE_OTHER:
+        evaluated_score -= 1000;
+        return evaluated_score;
+        break;
+    case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU:
+        evaluated_score += 500;
+        break;
+    case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:
+        evaluated_score += 1000;
+        break;
+    case VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU:
+        evaluated_score += 250;
+        return 0;
+        break;
+    case VK_PHYSICAL_DEVICE_TYPE_CPU:
+        evaluated_score += 100;
+        return 0;
+        break;
+    }
+  
+   if (getQueueFamilyIndex(device,store) == -1) {
+         return 0;
+     };   
+
+    evaluated_score += 1000;
+
+  return evaluated_score;
+
 };
 
-void flexon_vulkan_renderer::end_memory_recording(VkSystem* vksystem)
-{
+int flexonrenderer::getQueueFamilyIndex(VkPhysicalDevice dev,sdev &store){
 
-   static struct{
-    VkDeviceMemory *mem;
-   }info;
-   info.mem = &vksystem->mem_record_state->memory;
+    uint32_t queue_family_count = 0;
+    uint32_t queue_family_index = 0;
+    bool success = false;
 
-    int32_t mem_type_index = find_suitable_memory_properties(vksystem,
-        vksystem->physical_device.required_memory_type,
-        vksystem->mem_record_state->memory_type_bit);
+    vkGetPhysicalDeviceQueueFamilyProperties(dev, &queue_family_count, nullptr);
+    if (queue_family_count == (uint32_t)0) {
+        std::cout << "[QUEUE FAMILY] Queue family count is 0.\n";
+        return -1;
+    }
     
-    if (mem_type_index < 0)
-        std::cout << "Memory index not found failed" << std::endl;
+    std::vector<VkQueueFamilyProperties> queue_family_struct(queue_family_count);
+    vkGetPhysicalDeviceQueueFamilyProperties(dev, &queue_family_count, queue_family_struct.data());
 
-    create_struct(mem_layout_size_info, VkMemoryAllocateInfo,
-        .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-        .pNext = NULL,
-        .allocationSize = vksystem->mem_record_state->memory_size,
-        .memoryTypeIndex = (uint32_t)mem_type_index);
+    for (const auto& queue_iterator : queue_family_struct) {
 
-    vkAllocateMemory(vksystem->virtual_device, &mem_layout_size_info,
-        VK_NULL_HANDLE, info.mem);
+        if (queue_iterator.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+            success = true;
+            return 0;
+            
+        }
+        queue_family_index++;
+    }
+    if(success == false)
+     return -1;
 
-    for (auto *itr = vksystem->mem_record_state->memory_layout; itr != nullptr; itr = itr->next) {
-        switch (itr->part_type) {
-         case MEM_PART_UNIFORM_BUF:
-         case MEM_PART_VERTEX_BUF:
-         case MEM_PART_INDEXED_BUF:
-         case MEM_PART_NOM_BUF:
-            std::cout << "[INFO] MEM buffer binding request found" << std::endl;
-            vkBindBufferMemory(vksystem->virtual_device,
-                (VkBuffer)itr->bind_member,
-                *info.mem,
-                itr->memory_offset);
-            break;
-        case MEM_PART_IMAGE_BUF:
-            std::cout << "[INFO] MEM image binding request found" << std::endl;
-            vkBindImageMemory(vksystem->virtual_device,
-                (VkImage)itr->bind_member,
-                 *info.mem,
-                itr->memory_offset);
+    store.queueFamilyIndex = queue_family_index;
 
-         break;
+    return 0;
+};
+
+
+int flexonrenderer::getMemoryIndex(VkPhysicalDevice device , uint32_t typefilter){
+
+   create_struct(memProperties,VkPhysicalDeviceMemoryProperties);
+   vkGetPhysicalDeviceMemoryProperties(device,&memProperties);
+  
+   VkMemoryPropertyFlags rmemt {0};
+   switch(vkphyDev.type){
+    case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU:
+        rmemt = imemtype;
+        break;
+     case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:
+        rmemt = dmemtype;
+    break;
+   };
+
+    for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
+        if ((typefilter & (1 << i)) &&
+            (memProperties.memoryTypes[i].propertyFlags & rmemt ) == rmemt) {
+            return i; // Found a valid memory type
         }
     }
 
-    return;
+
+  return -1;
+
 };
 
-void flexon_vulkan_renderer::initlise()
-{
-    allocate_required(&vksystem);
+/*
+*
+*   ___________________________________________________
+*   |                                                 |
+*   |   CODE TO INITLISE VULKAN START                 |
+*   |                                                 |
+*   |                                                 |
+*   --------------------------------------------------- 
+*/
+
+int flexonrenderer::initlise(){
+  
+vkvirtDev = (struct vdev){
+     .dev = VK_NULL_HANDLE,
+     .queue = VK_NULL_HANDLE,
+     .vkcmdpool = VK_NULL_HANDLE,
+     .imgCount = 3,
+     .qCount = 1,  
+     .qPriority = 1.0f,
+     .imgformat = VK_FORMAT_R8G8B8A8_SRGB
+    };
 
 #ifndef NDEBUG
     if (!checkValidationLayerSupport(validationLayer, &enableLayerCount)) {
@@ -248,91 +286,439 @@ void flexon_vulkan_renderer::initlise()
     }
 #endif
 
-    if (vkEnumerateInstanceVersion(&vksystem.api_version) != VK_SUCCESS) {
+    if (vkEnumerateInstanceVersion(&vkapiversion) != VK_SUCCESS) {
         std::cout << "Error probing api verision" << std::endl;
-        exit_vulkan(EXIT_LEVEL_NONE, &vksystem);
-        return;
+        return -1;
+    }
+    if(!createInstance()){
+         std::cout << "Error instance creation failed" << std::endl;
+         return -1;
+    }
+    if(!getPhysicalDevice()){
+         std::cout << "Error physical device selection failed" << std::endl;
+         return -1;
+    }
+    if(!createVirtualDevice()){
+         std::cout << "Error creation of virtual device failed" << std::endl;
+         return -1;
+    }
+    delQue.initlise(vkvirtDev.dev);
+    if(!getQueue()){
+         std::cout << "Queue retrival failed" << std::endl;
+         return -1;
+    }
+    if(!createCmdPool()){
+         std::cout << "Command pool creation failed" << std::endl;
+         return -1;
+    }
+   if(!createShader()){
+         std::cout<<"Command shader  Creation Failed"<<std::endl;
+    } 
+  return 0;
+};
+
+bool flexonrenderer::createInstance(){
+    create_struct(app_info, VkApplicationInfo,
+        .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
+        .pApplicationName = "hello",
+        .applicationVersion = VK_MAKE_VERSION(1, 0, 0),
+        .pEngineName = "hello",
+        .engineVersion = VK_MAKE_VERSION(1, 0, 0),
+        .apiVersion = vkapiversion
+        );
+
+    create_struct(app_instance, VkInstanceCreateInfo,
+        .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
+        .pApplicationInfo = &app_info,
+        .enabledLayerCount = (uint32_t)0,
+        .ppEnabledLayerNames = NULL,
+        .enabledExtensionCount = (uint32_t)0,
+        .ppEnabledExtensionNames = NULL
+        );
+#ifndef NDEBUG
+    app_instance.enabledLayerCount = static_cast<uint32_t>(enableLayerCount);
+    app_instance.ppEnabledLayerNames = validationLayer;
+#endif
+
+    if (vkCreateInstance(&app_instance, NULL, &vkinstance) != VK_SUCCESS) {
+        std::cout << "instance creation failed" << std::endl;
+        return false;
+    }
+    
+  return true;
+};
+
+bool flexonrenderer::getPhysicalDevice(){
+    uint32_t device_count { 0 };
+
+    vkEnumeratePhysicalDevices(vkinstance, &device_count, nullptr);
+    if (device_count == 0) {
+        std::cout << "[DEVICE ERROR] Failed to find a GPU with the vulkan support. \n";
+        return false;
     }
 
-    if (!create_instance(&vksystem)) {
-        std::cout << "instance Creation Failed" << std::endl;
-        exit_vulkan(EXIT_LEVEL_NONE, &vksystem);
-        return;
+    std::vector<VkPhysicalDevice> available_devices(device_count);
+    vkEnumeratePhysicalDevices(vkinstance, &device_count, available_devices.data());
+
+    vkphyDev = selectPhysicalDevice(vkinstance,available_devices);
+    if(vkphyDev.dev == VK_NULL_HANDLE)
+      return false;
+
+    std::cout << "[DEVICE SUCCESS] selected a physical Device\n";
+
+    return true;
+
+};
+
+bool flexonrenderer::createVirtualDevice(){
+
+  create_struct(queue_family_struct, VkDeviceQueueCreateInfo,
+        .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+        .pNext = NULL,
+        .queueCount = vkvirtDev.qCount,
+        .pQueuePriorities = &vkvirtDev.qPriority
+        );
+
+     queue_family_struct.queueFamilyIndex = (uint32_t)vkphyDev.queueFamilyIndex;
+
+
+    create_struct(dynamic_rendering_feature, VkPhysicalDeviceDynamicRenderingFeaturesKHR,
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR,
+        .dynamicRendering = VK_TRUE);
+
+    create_struct(device_features, VkPhysicalDeviceFeatures);
+
+    create_struct(device_create_info, VkDeviceCreateInfo,
+        .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
+        .pNext = &dynamic_rendering_feature,
+        .queueCreateInfoCount = (uint32_t)1,
+        .pQueueCreateInfos = &queue_family_struct,
+        .pEnabledFeatures = &device_features);
+
+    device_create_info.enabledExtensionCount = (uint32_t)extensionCount;
+    device_create_info.ppEnabledExtensionNames = extensionName;
+
+    if (vkCreateDevice(vkphyDev.dev, &device_create_info,
+            nullptr, &vkvirtDev.dev)
+        != VK_SUCCESS) {
+        std::cout << "[DEVICE] Creation of logical Device failed. \n";
     }
 
-    if (!select_physical_device(&vksystem)) {
-        std::cout << "physicalDevice selection failed: " << std::endl;
-        exit_vulkan(EXIT_LEVEL_INSTANCE, &vksystem);
-        return;
-    }
-
-    if (!create_virtual_device(&vksystem)) {
-        std::cout << "[LOGICAL DEVICE] Creation of logical device failed.\n";
-        exit_vulkan(EXIT_LEVEL_INSTANCE, &vksystem);
-        return;
-    }
-
-    if (!get_queue(&vksystem)) {
-        std::cout << "[QUEUE] Failed to get the queue. \n";
-        exit_vulkan(EXIT_LEVEL_QUEUE, &vksystem);
-        return;
-    }
-
-    if (vksystem.render_pool.count == 0) {
-        std::cout << "[INVALID COUNT] Invalid buffer creation count. \n";
-        exit_vulkan(EXIT_LEVEL_QUEUE, &vksystem);
-        return;
-    }
-    if (!create_rendersync_resource(&vksystem)) {
-        std::cout << "[RENDER RESOURCE] Creation of render resources failed\n";
-        exit_vulkan(EXIT_LEVEL_QUEUE, &vksystem);
-        return;
-    }
-
-    if (!create_cmd_pool(&vksystem)) {
-        std::cout << "[COMMAND POOL] Creation of Commandpool failed.\n";
-        exit_vulkan(EXIT_LEVEL_QUEUE, &vksystem);
-        return;
-    }
-
-    if (!create_cmd_buffer(&vksystem)) {
-        std::cout << "[COMMAND POOL] Creation of Commandpool failed.\n";
-        exit_vulkan(EXIT_LEVEL_CMD_POOL, &vksystem);
-        return;
-    }
-
-    if (!create_render_buffer(&vksystem)) {
-        std::cout << "[RENDER BUFFER] Creation of render buffer failed\n";
-        exit_vulkan(EXIT_LEVEL_CMD_BUFFER, &vksystem);
-        return;
-    }
-
-    if (!create_pipeline(&vksystem)) {
-        std::cout << "[RENDER BUFFER] Creation of render buffer failed\n";
-        exit_vulkan(EXIT_LEVEL_CMD_BUFFER, &vksystem);
-        return;
-    }
-
-    return;
+        std::cout << "[DEVICE] Creation of logical Device success. \n";
+    return true;
 }
 
-bool flexon_vulkan_renderer::load_shader(VkSystem* vksystem, const char* vtx_shader_code, const char* frag_shader_code)
+bool flexonrenderer::getQueue(){
+
+vkGetDeviceQueue(vkvirtDev.dev, vkphyDev.queueFamilyIndex,
+        0, &vkvirtDev.queue);
+
+    if (vkvirtDev.queue == nullptr)
+        return false;
+      std::cout << "[QUEUE] Retrived queue successfull. \n";
+  
+  return true;
+
+};
+
+bool flexonrenderer::createCmdPool(){
+
+  create_struct(cmd_pool_info, VkCommandPoolCreateInfo,
+        .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+        .pNext = NULL,
+        .flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
+        .queueFamilyIndex = vkphyDev.queueFamilyIndex);
+
+    if (vkCreateCommandPool(vkvirtDev.dev, &cmd_pool_info,nullptr, &vkvirtDev.vkcmdpool)!= VK_SUCCESS)
+        return false;
+
+    std::cout << "[COMMANDPOOL] Creation of command pool OK \n";
+    
+
+  return true;
+};
+
+VkCommandBuffer flexonrenderer::createcmdbuffer(){
+
+   VkCommandBuffer tmp;
+
+   create_struct(cmd_buffer_allocation_info, VkCommandBufferAllocateInfo,
+        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+        .pNext = NULL,
+        .commandPool = vkvirtDev.vkcmdpool,
+        .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+        .commandBufferCount = (uint32_t)1
+        );
+
+    if (vkAllocateCommandBuffers(vkvirtDev.dev, &cmd_buffer_allocation_info,&tmp) != VK_SUCCESS)
+        return VK_NULL_HANDLE;
+
+    delQue.pushcmdbuf(tmp);
+
+    std::cout << "[COMMAND BUFFER] Creation of command buffer OK \n";
+
+    return tmp;
+};
+
+void flexonrenderer::setExtents(uint32_t *pixel , vec2<uint32_t> extents){
+
+   imageExtents = extents; 
+   struct memory tmp = createImage(&vkvirtDev.img,&vkvirtDev.imgView,
+                                   vkvirtDev.imgCount, vkvirtDev.imgCount,imageExtents); 
+   if(tmp.layout == nullptr)
+     return;
+
+   vkmemory[IMAGE_MEMORY] = tmp;
+    
+    buffercreateinfo info = {
+     .usage_mode = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+     .flags = 0,
+     .size = (imageExtents.x * imageExtents.y) * sizeof(uint32_t) * 2
+    };
+
+    vkmemory[STAGING_DISPLAY_MEMORY] = info.mem;
+    vkvirtDev.winBuffer = createBuffer(info);
+    vkMapMemory(vkvirtDev.dev,info.mem.mem,0,VK_WHOLE_SIZE,0,(void**)&vkvirtDev.vkpixel);
+    
+   
+  return;
+};
+
+
+struct memory flexonrenderer::createImage(VkImage **store , VkImageView **viewstore , 
+                                            uint32_t cimg, uint32_t cview, vec2<uint32_t> dimension){
+
+  
+  VkImage *imgtmp = new VkImage[cimg];
+  struct memory tmpmem = {0};
+  tmpmem.layout = new struct memlayout[cimg];
+  tmpmem.layoutCount = cimg;
+
+   if(cimg == 0)
+       return {0};
+
+  create_struct(vk_image_info, VkImageCreateInfo,
+        .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+        .pNext = NULL,
+        .flags = 0,
+        .imageType = VK_IMAGE_TYPE_2D,
+        .format = VK_FORMAT_R8G8B8A8_SRGB,
+        .extent = { .width = dimension.x, .height = dimension.y, .depth = (uint32_t)1 },
+        .mipLevels = (uint32_t)1,
+        .arrayLayers = (uint32_t)1,
+        .samples = VK_SAMPLE_COUNT_1_BIT,
+        .tiling = VK_IMAGE_TILING_OPTIMAL,
+        .usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT
+            | VK_IMAGE_USAGE_TRANSFER_SRC_BIT
+            | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+        .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+        .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED);
+
+  create_struct(memreq, VkMemoryRequirements);
+  
+
+ 
+  for(uint32_t i = 0 ; i < cimg  ; i++){
+    if (vkCreateImage(vkvirtDev.dev, &vk_image_info,
+            NULL, (imgtmp + i))
+        != VK_SUCCESS) {
+        return {0};
+    }
+    delQue.pushimage(imgtmp[i]);
+
+    vkGetImageMemoryRequirements(vkvirtDev.dev , imgtmp[i], &memreq);
+      VkDeviceSize alignedoffset = align_offset(tmpmem.memsize,memreq.alignment);
+   
+      tmpmem.memsize +=  alignedoffset + memreq.size;
+      tmpmem.layout[i].offset = alignedoffset; 
+      tmpmem.memsize += memreq.size;
+};
+
+  int memidx = getMemoryIndex( vkphyDev.dev , memreq.memoryTypeBits);  
+
+  create_struct(mem_layout_size_info, VkMemoryAllocateInfo,
+        .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+        .pNext = NULL,
+        .allocationSize = tmpmem.memsize,
+        .memoryTypeIndex = (uint32_t)memidx);
+
+   if(vkAllocateMemory(vkvirtDev.dev, &mem_layout_size_info,
+        VK_NULL_HANDLE, &tmpmem.mem) != VK_SUCCESS){
+     return {0};
+     }
+     delQue.pushmemory(tmpmem.mem);
+
+    for(int i = 0 ; i < cimg ; i++)
+      vkBindImageMemory(vkvirtDev.dev, imgtmp[i] , tmpmem.mem , tmpmem.layout[i].offset);
+ 
+     *store = imgtmp;
+
+  if(viewstore != nullptr){
+   create_struct(image_view_create_info, VkImageViewCreateInfo,
+         .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+         .pNext = NULL,
+         .flags = (uint32_t)0,
+         .viewType = VK_IMAGE_VIEW_TYPE_2D,
+         .format = VK_FORMAT_R8G8B8A8_SRGB,
+         .components = { .r = VK_COMPONENT_SWIZZLE_R,
+             .g = VK_COMPONENT_SWIZZLE_G,
+             .b = VK_COMPONENT_SWIZZLE_B,
+             .a = VK_COMPONENT_SWIZZLE_A },
+         .subresourceRange = {
+             .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+             .baseMipLevel = (uint32_t)0,
+             .levelCount = (uint32_t)1,
+             .baseArrayLayer = (uint32_t)0,
+             .layerCount = (uint32_t)1 });
+      
+      VkImageView *tmpView = new VkImageView[cview];
+      *viewstore = tmpView;
+
+      for(int i = 0 ; i < cview ; i++){
+       image_view_create_info.image = imgtmp[i];
+       if (vkCreateImageView(vkvirtDev.dev, &image_view_create_info,
+             NULL, (tmpView+i))
+         != VK_SUCCESS) {
+        return {0};
+       }
+      delQue.pushimageview(tmpView[i]);
+
+      };
+
+    };
+      return tmpmem;
+};
+
+
+VkBuffer flexonrenderer::createBuffer(buffercreateinfo &info){
+
+  
+  VkBuffer tmp = VK_NULL_HANDLE;
+
+   create_struct(buffer_create_info, VkBufferCreateInfo,
+        .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+        .pNext = NULL,
+        .flags = info.flags,
+        .size = info.size,
+        .usage = info.usage_mode,
+        .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+        .queueFamilyIndexCount = vkvirtDev.qCount,
+        .pQueueFamilyIndices = &vkphyDev.queueFamilyIndex
+       );
+
+  
+    vkCreateBuffer(vkvirtDev.dev,&buffer_create_info,NULL,&tmp);
+
+    create_struct(memreq, VkMemoryRequirements);
+    vkGetBufferMemoryRequirements(vkvirtDev.dev, tmp, &memreq);
+    int memidx = getMemoryIndex( vkphyDev.dev , memreq.memoryTypeBits);  
+
+   create_struct(memAllocateInfo, VkMemoryAllocateInfo,
+        .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+        .pNext = NULL,
+        .allocationSize = memreq.size,
+        .memoryTypeIndex = (uint32_t)memidx);
+
+  if(vkAllocateMemory(vkvirtDev.dev, &memAllocateInfo,
+          VK_NULL_HANDLE, &info.mem.mem) != VK_SUCCESS){
+       return {0};
+    }
+   vkBindBufferMemory(vkvirtDev.dev,tmp,info.mem.mem,0);
+   delQue.pushbuffer(tmp);
+   delQue.pushmemory(info.mem.mem);
+
+
+   return tmp;
+
+};
+/*
+*
+*
+*   CODE TO INITLISE VULKNA END
+*
+*
+*/
+
+/*
+*
+*
+*   CODE TO CLEAN SYSTEM BEFORE EXITING ONLY BELOW
+*
+*
+*/
+
+void flexonrenderer::destroy(){
+exit_vulkan(EXIT_LEVEL_ALL);
+};
+
+
+void flexonrenderer::exit_vulkan(enum exitlevel level)
 {
 
-    // unoptimised code
-    // TODO: Optimise this code and remove depedency on class based abstracted function
-    // just for normal compilation
+    if (vksysdown == false) {
+        switch (level) {
+        case EXIT_LEVEL_ALL:
+        case EXIT_LEVEL_GRAPHICS_PIPELINE:
+        case EXIT_LEVEL_RENDER_BUFFER:
+        case EXIT_LEVEL_RENDER_PASS:
+        case EXIT_LEVEL_CMD_BUFFER:
+        case EXIT_LEVEL_CMD_POOL:
+        case EXIT_LEVEL_RESOURCE:
+        case EXIT_LEVEL_QUEUE:
+        delQue.flush();
+            vkDestroyCommandPool(vkvirtDev.dev,vkvirtDev.vkcmdpool,nullptr);
+        case EXIT_LEVEL_VIRTUAL_DEVICE:
+            vkDestroyDevice(vkvirtDev.dev, nullptr);
+        case EXIT_LEVEL_INSTANCE:
+            vkDestroyInstance(vkinstance, nullptr);
+        case EXIT_LEVEL_NONE:
+            break;
+        }
+  //   free_required(vksystem);
+    }
 
-    size_t vertex_code_length = strlen(vtx_shader_code);
-    size_t fragment_code_length = strlen(frag_shader_code);
+    vksysdown = true;
 
+    return;
+};
+
+/*
+*
+*
+*   CODE TO CLEAN SYSTEM END
+*
+*
+*/
+
+
+/*
+*
+*   ___________________________________________________
+*   |                                                 |
+*   |   CODE TO CREATE SHADER PIPELINE                |
+*   |                                                 |
+*   |                                                 |
+*   --------------------------------------------------- 
+*/
+
+shadercompile flexonrenderer::compileshader(const char* vertCode, const char* fragCode)
+{
+
+    
+    shadercompile retinfo = {0};
+
+    size_t vertex_code_length = strlen(vertCode);
+    size_t fragment_code_length = strlen(fragCode);
+    
     shaderc::CompileOptions shader_compiler_options;
+
     shaderc::Compiler shader_compiler;
-    shaderc::SpvCompilationResult vertex_shader_result = shader_compiler.CompileGlslToSpv(vtx_shader_code,
+    shaderc::SpvCompilationResult vertex_shader_result = shader_compiler.CompileGlslToSpv(vertCode,
         vertex_code_length,
         shaderc_glsl_vertex_shader,
         "shader.vert",
         shader_compiler_options);
+
     int shader_status_vert = vertex_shader_result.GetCompilationStatus();
     if (shader_status_vert != shaderc_compilation_status_success) {
         std::cout << "[COMPILATION] Compilation of Vertex shader failed.\n";
@@ -345,8 +731,8 @@ bool flexon_vulkan_renderer::load_shader(VkSystem* vksystem, const char* vtx_sha
 
     uint32_t* itr_vert = new uint32_t[vert_size];
 
-    vksystem->shader_record_state->code_size_vert = vert_size * sizeof(uint32_t); // convert size to bytes;
-    vksystem->shader_record_state->compiled_code_vert = itr_vert;
+    retinfo.vcodesize = (uint32_t)vert_size * sizeof(uint32_t);
+    retinfo.vtxCode = itr_vert;
 
     size_t index = 0;
     for (auto& iterator : vertex_shader_result) {
@@ -354,560 +740,110 @@ bool flexon_vulkan_renderer::load_shader(VkSystem* vksystem, const char* vtx_sha
         index += 1;
     }
 
-    shaderc::SpvCompilationResult frag_shader_result = shader_compiler.CompileGlslToSpv(frag_shader_code,
+    shaderc::SpvCompilationResult frag_shader_result = shader_compiler.CompileGlslToSpv(fragCode,
         fragment_code_length,
         shaderc_glsl_fragment_shader,
         "shader.frag",
         shader_compiler_options);
+
     int shader_status_frag = frag_shader_result.GetCompilationStatus();
     if (shader_status_frag != shaderc_compilation_status_success) {
-        std::cout << "[COMPILATION] Compilation of Vertex shader failed.\n";
+        std::cout << "[COMPILATION] Compilation of fragment shader failed.\n";
+        std::cout<<frag_shader_result.GetErrorMessage()<<std::endl;
     }
 
+  
     size_t frag_size = 0; // size w.r.t uint32_t
     for (auto& iterator : frag_shader_result) {
         frag_size += 1;
-    }
-
+     }
+  
     uint32_t* itr_frag = new uint32_t[frag_size];
-
-    vksystem->shader_record_state->code_size_frag = frag_size * sizeof(uint32_t); // convert size to bytes;
-    vksystem->shader_record_state->compiled_code_frag = itr_frag;
-
+   
+    retinfo.fcodesize = (uint32_t)frag_size * sizeof(uint32_t); // convert size to bytes;
+    retinfo.frgCode = itr_frag;
+   
     size_t idx = 0;
     for (auto& iterator : frag_shader_result) {
         itr_frag[idx] = iterator;
         idx += 1;
     }
 
-    return true;
+    return retinfo;
 }
 
-bool flexon_vulkan_renderer::create_instance(VkSystem* vksystem)
-{
-    // TODO: incoporate physical device feature 2;
+modulereturn flexonrenderer::createShaderModule(shadercompile &rawcode){
+   modulereturn modu = {0};
 
-    create_struct(app_info, VkApplicationInfo,
-        .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
-        .pApplicationName = "hello",
-        .applicationVersion = VK_MAKE_VERSION(1, 0, 0),
-        .pEngineName = "hello",
-        .engineVersion = VK_MAKE_VERSION(1, 0, 0),
-        .apiVersion = vksystem->api_version, );
-
-    create_struct(app_instance, VkInstanceCreateInfo,
-        .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
-        .pApplicationInfo = &app_info,
-        .enabledLayerCount = (uint32_t)0,
-        .ppEnabledLayerNames = NULL,
-        .enabledExtensionCount = (uint32_t)0,
-        .ppEnabledExtensionNames = NULL, );
-#ifndef NDEBUG
-    app_instance.enabledLayerCount = static_cast<uint32_t>(enableLayerCount);
-    app_instance.ppEnabledLayerNames = validationLayer;
-#endif
-
-    if (vkCreateInstance(&app_instance, NULL, &vksystem->instance) != VK_SUCCESS) {
-        std::cout << "instance creation failed" << std::endl;
-        return false;
-    }
-    return true;
-}
-
-bool flexon_vulkan_renderer::select_physical_device(VkSystem* vksystem)
-{
-
-    uint32_t device_count { 0 };
-
-    vkEnumeratePhysicalDevices(vksystem->instance, &device_count, nullptr);
-    if (device_count == 0) {
-        std::cout << "[DEVICE ERROR] Failed to find a GPU with the vulkan support. \n";
-        return false;
-    }
-
-    std::vector<VkPhysicalDevice> available_devices(device_count);
-    vkEnumeratePhysicalDevices(vksystem->instance, &device_count, available_devices.data());
-
-    if (!filter_physical_device(vksystem, available_devices)) {
-        std::cout << "[DEVICE ERROR] Failed to find a GPU with suitable requirements \n";
-        return false;
-    }
-    std::cout << "[DEVICE SUCCESS] selected a physical Device\n";
-
-    return true;
-};
-
-bool flexon_vulkan_renderer::create_virtual_device(VkSystem* vksystem)
-{
-
-    create_struct(queue_family_struct, VkDeviceQueueCreateInfo,
-        .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+   create_struct(vert_module_create_info, VkShaderModuleCreateInfo,
+        .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
         .pNext = NULL,
-        .queueCount = vksystem->physical_device.queue_count,
-        .pQueuePriorities = &vksystem->physical_device.queue_priority);
+        .codeSize = rawcode.vcodesize,
+        .pCode = rawcode.vtxCode);
 
-    queue_family_struct.queueFamilyIndex = vksystem->physical_device.queue_family_index;
-
-    create_struct(dynamic_rendering_feature, VkPhysicalDeviceDynamicRenderingFeaturesKHR,
-        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR,
-        .dynamicRendering = VK_TRUE, );
-
-    create_struct(device_features, VkPhysicalDeviceFeatures);
-
-    create_struct(device_create_info, VkDeviceCreateInfo,
-        .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
-        .pNext = &dynamic_rendering_feature,
-        .queueCreateInfoCount = 1,
-        .pQueueCreateInfos = &queue_family_struct,
-        .pEnabledFeatures = &device_features);
-
-    device_create_info.enabledExtensionCount = (uint32_t)vksystem->device_extension_count;
-    device_create_info.ppEnabledExtensionNames = vksystem->extension_name;
-
-    if (vkCreateDevice(vksystem->physical_device.device, &device_create_info,
-            nullptr, &vksystem->virtual_device)
-        != VK_SUCCESS) {
-        std::cout << "[DEVICE] Creation of logical Device failed. \n";
-    }
-
-    std::cout << "[DEVICE] Creation of logical Device success. \n";
-    return true;
-};
-
-bool flexon_vulkan_renderer::get_queue(VkSystem* vksystem)
-{
-
-    vksystem->physical_device.Queue = new VkQueue[vksystem->physical_device.queue_count];
-
-    vkGetDeviceQueue(vksystem->virtual_device, vksystem->physical_device.queue_family_index,
-        0, vksystem->physical_device.Queue);
-
-    if (vksystem->physical_device.Queue == nullptr)
-        return false;
-
-    std::cout << "[QUEUE] Retrived queue successfull. \n";
-    return true;
-}
-
-bool flexon_vulkan_renderer::create_cmd_pool(VkSystem* vksystem)
-{
-
-    create_struct(cmd_pool_info, VkCommandPoolCreateInfo,
-        .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+    create_struct(frag_module_create_info, VkShaderModuleCreateInfo,
+        .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
         .pNext = NULL,
-        .flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
-        .queueFamilyIndex = vksystem->physical_device.queue_family_index);
+        .codeSize = rawcode.fcodesize,
+        .pCode = rawcode.frgCode);
 
-    if (vkCreateCommandPool(vksystem->virtual_device, &cmd_pool_info,
-            nullptr, &vksystem->cmd_pool)
-        != VK_SUCCESS)
-        return false;
+    vkCreateShaderModule(vkvirtDev.dev, &vert_module_create_info,
+        NULL, &modu.vertex);
 
-    std::cout << "[COMMANDPOOL] Creation of command pool OK \n";
-    return true;
-}
+    vkCreateShaderModule(vkvirtDev.dev, &frag_module_create_info,
+        NULL, &modu.fragment);
 
-bool flexon_vulkan_renderer::create_cmd_buffer(VkSystem* vksystem)
-{
+      delQue.pushshader(modu.vertex);
+      delQue.pushshader(modu.fragment);
 
-    create_struct(cmd_buffer_allocation_info, VkCommandBufferAllocateInfo,
-        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
-        .pNext = NULL,
-        .commandPool = vksystem->cmd_pool,
-        .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-        .commandBufferCount = vksystem->render_pool.count);
-
-    if (vkAllocateCommandBuffers(vksystem->virtual_device, &cmd_buffer_allocation_info,
-            vksystem->render_pool.image_cmd_buffer)
-        != VK_SUCCESS)
-        return false;
-
-    return true;
-}
-
-bool flexon_vulkan_renderer::create_rendersync_resource(VkSystem* vksystem)
-{
-    create_struct(fenceinfo, VkFenceCreateInfo,
-        .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
-        .pNext = NULL,
-        .flags = VK_FENCE_CREATE_SIGNALED_BIT);
-
-    create_struct(semaphoreInfo, VkSemaphoreCreateInfo,
-        .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
-        .pNext = NULL);
-
-    for (int i = 0; i < vksystem->render_pool.count; i++) {
-
-        if (vkCreateFence(vksystem->virtual_device, &fenceinfo,
-                NULL, &vksystem->render_pool.frame_buffer[i].sync.image_fence)
-            != VK_SUCCESS) {
-            destroy_rendersync_resource(vksystem);
-            std::cout << "[FENCE ALLOCATION] Allocation of fence failed \n";
-            return false;
-        }
-        if (vkCreateSemaphore(vksystem->virtual_device, &semaphoreInfo,
-                NULL, &vksystem->render_pool.frame_buffer[i].sync.image_start_semaphore)
-            != VK_SUCCESS) {
-
-            destroy_rendersync_resource(vksystem);
-            std::cout << "[SEMAPHORE END] Allocation of semaphore failed \n";
-            return false;
-        }
-
-        if (vkCreateSemaphore(vksystem->virtual_device, &semaphoreInfo,
-                NULL, &vksystem->render_pool.frame_buffer[i].sync.image_end_semaphore)
-            != VK_SUCCESS) {
-
-            destroy_rendersync_resource(vksystem);
-            std::cout << "[SEMAPHORE END] Allocation of semaphore failed \n";
-            return false;
-        }
-    }
-
-    return true;
-};
-
-bool flexon_vulkan_renderer::create_render_buffer(VkSystem* vksystem)
-{
-
-    start_memory_recording(vksystem, VK_MEMORY_TYPE_PRIMARY_MAPPED);
-
-    buffer_create_info buffer_info = {
-     .layout_type = MEM_PART_NOM_BUF,
-     .usage_mode =  VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-     .flags = 0,
-     .size = (vksystem->surface_width * vksystem->surface_height) * sizeof(uint32_t)
-    };
-
-    vksystem->render_pool.staging_buffer = create_buffer(vksystem,&buffer_info);
-
-    for (int i = 0; i < vksystem->render_pool.count; i++) {
-        VkImage tmp_img = create_image(vksystem, vksystem->surface_height, vksystem->surface_width);
-        vksystem->render_pool.frame_buffer[i].image = tmp_img;
-    };
-  
-   
-    end_memory_recording(vksystem);
-
-    vkMapMemory(vksystem->virtual_device,
-    vksystem->mem_record_state->memory,
-    0,
-    buffer_info.size,
-    0,
-    (void **)&vksystem->state.raw_pixel);
-
-    for (int i = 0; i < vksystem->render_pool.count; i++) {
-        VkImageView tmp_view = create_image_view(vksystem, vksystem->render_pool.frame_buffer[i].image);
-        vksystem->render_pool.frame_buffer[i].image_view = tmp_view;
-    };
-
-    vksystem->render_pool.memory = vksystem->mem_record_state;
-
-    return true;
+      delete rawcode.vtxCode;
+      delete rawcode.frgCode;
+  return modu;
 };
 
 
-void flexon_vulkan_renderer::destroy_rendersync_resource(VkSystem* vksystem)
-{
 
-    if (vksystem->render_pool.frame_buffer == nullptr)
-        return;
+bool flexonrenderer::createShader(){
+  buffercreateinfo vertexbuffer = {0};
+  buffercreateinfo uniformbuffer = {0};
+  buffercreateinfo indexbuffer = {0};
 
-    for (int i = 0; i < vksystem->render_pool.count; i++)
+  vertexbuffer.usage_mode = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+  uniformbuffer.usage_mode = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+  indexbuffer.usage_mode = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
 
-        vkDestroyFence(vksystem->virtual_device,
-            vksystem->render_pool.frame_buffer[i].sync.image_fence, NULL);
-
-    for (int i = 0; i < vksystem->render_pool.count; i++)
-        vkDestroySemaphore(vksystem->virtual_device,
-            vksystem->render_pool.frame_buffer[i].sync.image_start_semaphore, NULL);
-
-    for (int i = 0; i < vksystem->render_pool.count; i++)
-        vkDestroySemaphore(vksystem->virtual_device,
-            vksystem->render_pool.frame_buffer[i].sync.image_end_semaphore, NULL);
-
-    return;
-}
-
-void flexon_vulkan_renderer::destroy_renderer()
-{
-    exit_vulkan(EXIT_LEVEL_ALL, &vksystem);
-};
-
-
-void flexon_vulkan_renderer::render()
-{
-    render_frame(&vksystem);
-    return;
-};
-
-void flexon_vulkan_renderer::render_frame(VkSystem* vksystem)
-{
-    toggle_state(vksystem);
-    start_cmd_buffer(vksystem);
-    // TODO: Render Real content;
-
-    end_cmd_buffer(vksystem);
-
-    if (vkWaitForFences(vksystem->virtual_device, 1, &vksystem->state.fb.sync.image_fence, 1, UINT64_MAX) == VK_SUCCESS) {
-    }
-
-  /*
-    for (int i = 0; i < (500 * 500); i++) {
-        vksystem->state.surface_pixel[i] = vksystem->state.raw_pixel[i];
-    }
-    wl_surface_damage(vksystem->vulkan_wayland_surface_ptr, 0, 0, 500, 500);
-    wl_surface_commit(vksystem->vulkan_wayland_surface_ptr);
-  */
-};
-
-void flexon_vulkan_renderer::toggle_state(VkSystem* vksystem)
-{
-    int current_index = vksystem->state.current_index + 1;
-
-    bool smaller = (current_index < vksystem->render_pool.count);
-
-    current_index = current_index * smaller;
-
-    vksystem->state.current_index = current_index;
-    memcpy(&vksystem->state.fb,
-        &vksystem->render_pool.frame_buffer[current_index], sizeof(render_frame_buffer));
-    vksystem->state.current_cmd_buffer = vksystem->render_pool.image_cmd_buffer[current_index];
-    vksystem->state.cpy_buffer = vksystem->render_pool.staging_buffer;
-    return;
-};
-
-void flexon_vulkan_renderer::transition_layout_start(VkSystem* vksystem)
-{
-  static struct {
-    uint32_t queueidx;
-   }info;
-
-   info.queueidx = vksystem->physical_device.queue_family_index; 
-
-
-    create_struct(barrier_info, VkImageMemoryBarrier,
-        .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
-        .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-        .newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-        .srcQueueFamilyIndex = info.queueidx,
-        .dstQueueFamilyIndex = info.queueidx,
-        .image = vksystem->state.fb.image,
-        .subresourceRange = {
-            .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-            .baseMipLevel = (uint32_t)0,
-            .levelCount = (uint32_t)1,
-            .baseArrayLayer = (uint32_t)0,
-            .layerCount = (uint32_t)1 }
-            );
-
-    barrier_info.srcAccessMask = 0;
-    barrier_info.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-
-    vkCmdPipelineBarrier(
-        vksystem->state.current_cmd_buffer,
-        VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-        0,
-        0, nullptr,
-        0, nullptr,
-        1, &barrier_info);
-
-    return;
-};
-
-void flexon_vulkan_renderer::transition_layout_end(VkSystem* vksystem)
-{
-  static struct {
-    uint32_t queueidx;
-   }info;
-
-   info.queueidx = vksystem->physical_device.queue_family_index; 
-
-    create_struct(barrier_info, VkImageMemoryBarrier,
-        .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
-        .oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-        .newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-        .srcQueueFamilyIndex = info.queueidx,
-        .dstQueueFamilyIndex = info.queueidx,
-        .image = vksystem->state.fb.image,
-        .subresourceRange = {
-            .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-            .baseMipLevel = (uint32_t)0,
-            .levelCount = (uint32_t)1,
-            .baseArrayLayer = (uint32_t)0,
-            .layerCount = (uint32_t)1 }
-            );
-
-    barrier_info.srcAccessMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    barrier_info.dstAccessMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
-
-    vkCmdPipelineBarrier(
-        vksystem->state.current_cmd_buffer,
-        VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-        VK_PIPELINE_STAGE_TRANSFER_BIT,
-        0,
-        0, nullptr,
-        0, nullptr,
-        1, &barrier_info);
-
-    return;
-};
-
-void flexon_vulkan_renderer::start_cmd_buffer(VkSystem* vksystem)
-{
-  vksystem->state.shader = vksystem->render_pool.pipeline->shader;
-
-  static struct {
-    VkCommandBuffer cmd;
-    VkImageView view;
-    VkPipeline pipeline;
-  }info;
-
-  info.cmd = vksystem->state.current_cmd_buffer;
-  info.view = vksystem->state.fb.image_view;
-  info.pipeline = vksystem->render_pool.pipeline->pipeline;
-
-    create_struct(cmd_buffer_info, VkCommandBufferBeginInfo,
-        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
-        .pNext = NULL,
-        .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-
-    vkBeginCommandBuffer(info.cmd, &cmd_buffer_info);
-    transition_layout_start(vksystem);
-
-    create_struct(color_attachment_info, VkRenderingAttachmentInfo,
-        .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
-        .pNext = NULL,
-        .imageView = info.view,
-        .imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-        .resolveMode = VK_RESOLVE_MODE_NONE,
-        .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-        .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-        .clearValue = { { 0.0f, 1.0f, 0.0f, 1.0f } });
-
-    create_struct(rendering_info, VkRenderingInfoKHR,
-        .sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR,
-        .pNext = NULL,
-        .renderArea = {
-            .offset = {
-                .x = 0,
-                .y = 0 },
-            .extent = { .width = vksystem->surface_width, .height = vksystem->surface_height } },
-        .layerCount = (uint32_t)1,
-        .viewMask = (uint32_t)0,
-        .colorAttachmentCount = (uint32_t)1, 
-        .pColorAttachments = &color_attachment_info
-                  );
-
-    vkCmdBeginRendering(info.cmd, &rendering_info);
-    vkCmdBindPipeline(info.cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, info.pipeline);
-    VkDeviceSize offsets[] = {0};
-    vkCmdBindVertexBuffers(info.cmd, 0, 1,&vksystem->state.shader->input.vertex_buffer, offsets);
-    vkCmdBindIndexBuffer(info.cmd,vksystem->state.shader->input.index_buffer, 0,VK_INDEX_TYPE_UINT32);
-
-    VkViewport viewport {};
-    viewport.x = 0.0f;
-    viewport.y = 0.0f;
-    viewport.width = static_cast<float>(vksystem->surface_width);
-    viewport.height = static_cast<float>(vksystem->surface_height);
-    viewport.minDepth = 0.0f;
-    viewport.maxDepth = 1.0f;
-    vkCmdSetViewport(info.cmd, 0, 1, &viewport);
-
-    VkRect2D scissor {};
-    scissor.offset = { 0, 0 };
-    scissor.extent = { 500, 500 };
-    vkCmdSetScissor(info.cmd, 0, 1, &scissor);
-    vkCmdDrawIndexed(info.cmd,12, 1, 0, 0, 0);
-    return;
-
-};
-
-void flexon_vulkan_renderer::end_cmd_buffer(VkSystem* vksystem)
-{
-    vkCmdEndRendering(vksystem->state.current_cmd_buffer);
-
-    transition_layout_end(vksystem);
-
-    VkBufferImageCopy region {};
-    region.bufferOffset = 0;
-    region.bufferRowLength = 500; // Tightly packed
-    region.bufferImageHeight = 500;
-
-    region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    region.imageSubresource.mipLevel = 0;
-    region.imageSubresource.baseArrayLayer = 0;
-    region.imageSubresource.layerCount = 1;
-
-    region.imageOffset = { 0, 0, 0 };
-    region.imageExtent = { 500, 500, 1 };
-
-    vkCmdCopyImageToBuffer(
-        vksystem->state.current_cmd_buffer,
-        vksystem->state.fb.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-        vksystem->state.cpy_buffer,
-        1, &region);
-
-    vkEndCommandBuffer(vksystem->state.current_cmd_buffer);
-    create_struct(submit_info, VkSubmitInfo,
-        .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
-        .pNext = NULL,
-        .waitSemaphoreCount = (uint32_t)0,
-        .pWaitSemaphores = nullptr,
-        .pWaitDstStageMask = (uint32_t)0,
-        .commandBufferCount = (uint32_t)1,
-        .pCommandBuffers = &vksystem->state.current_cmd_buffer,
-        .signalSemaphoreCount = (uint32_t)0,
-        .pSignalSemaphores = nullptr);
-
-    vkResetFences(vksystem->virtual_device, 1, &vksystem->state.fb.sync.image_fence);
-    vkQueueSubmit(vksystem->physical_device.Queue[0], 1, &submit_info,
-        vksystem->state.fb.sync.image_fence);
-
-    return;
-};
-
-bool flexon_vulkan_renderer::create_pipeline(VkSystem* vksystem)
-{
-
-    pipeline_info info;
-
-    info.stype = VK_SHADER_VIEW; 
-    info.ptype = VK_PIPELINE_TYPE_PRIMARY;
-    info.vtx_code = (char*)vertex_shader_code;
-    info.frag_code = (char*)fragment_shader_code;
-
-    info.input.vertex_stride = (uint32_t)sizeof(glm::vec2);
-    info.input.uniform_stride = (uint32_t)sizeof(uint32_t);
-    info.input.vertex_size = sizeof(glm::vec2) * 8;
-    info.input.uniform_size = sizeof(glm::vec2);
-    
-    info.input.indexbuffer_size =  sizeof(indexed_data) * 2;
-    info.input.indexbuffer_stride = sizeof(uint32_t);
+  shaderWrapper normalshaderWrapper = {0};
+  if(NORMAL_SHADER == 1){
+   vertexbuffer.size = sizeof(vertexshaderdata) * NORMAL_SHADER_VERTEX_SIZE;
+   uniformbuffer.size = sizeof(normalshaderuniform) * NORMAL_SHADER_VERTEX_SIZE;
+   indexbuffer.size = sizeof(vertexshaderdata) * NORMAL_SHADER_VERTEX_SIZE;
+   shadercompile normalcompiled = compileshader(normalShaderCodeVertex,normalShaderCodeFragment); 
+   normalshaderWrapper.shaderModule = createShaderModule(normalcompiled);
+  }
  
+  vkvirtDev.vertexBuffer = createBuffer(vertexbuffer); 
+  vkvirtDev.uniformBuffer = createBuffer(uniformbuffer); 
+  vkvirtDev.indexBuffer = createBuffer(indexbuffer);
 
-    begin_pipeline_recording(vksystem, &info);
 
-    if (!create_graphics_pipeline(vksystem, vksystem->shader_record_state)) {
-        return false;
-    }
-
-    vksystem->render_pool.pipeline = end_pipeline_recording(vksystem);
-    return true;
+ return true;
 };
 
-bool flexon_vulkan_renderer::create_graphics_pipeline(VkSystem* vksystem, vk_shader* which_shader)
-{
 
-    create_struct(pipeline_layout_info, VkPipelineLayoutCreateInfo,
+
+
+bool flexonrenderer::createPipeline(shaderWrapper &shader){
+  
+
+  create_struct(pipeline_layout_info, VkPipelineLayoutCreateInfo,
         .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
         .pNext = NULL,
         .setLayoutCount = (uint32_t)0,
         .pSetLayouts = nullptr,
         .pushConstantRangeCount = (uint32_t)0,
         .pPushConstantRanges = nullptr, );
-    if (vkCreatePipelineLayout(vksystem->virtual_device, &pipeline_layout_info, nullptr, &vksystem->pipeline_record_state->layout) != VK_SUCCESS) {
+    if (vkCreatePipelineLayout(vkvirtDev.dev, &pipeline_layout_info, nullptr, &shader.pipelineLayout) 
+    != VK_SUCCESS) {
         std::cout << "[PIPELINE] Layout Creation Failed\n";
         return false;
     }
@@ -917,7 +853,7 @@ bool flexon_vulkan_renderer::create_graphics_pipeline(VkSystem* vksystem, vk_sha
     shader_stage[0].pNext = NULL;
     shader_stage[0].flags = 0;
     shader_stage[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
-    shader_stage[0].module = which_shader->shader_vert;
+    shader_stage[0].module = shader.shaderModule.vertex;
     shader_stage[0].pName = "main";
     shader_stage[0].pSpecializationInfo = NULL;
 
@@ -925,13 +861,13 @@ bool flexon_vulkan_renderer::create_graphics_pipeline(VkSystem* vksystem, vk_sha
     shader_stage[1].pNext = NULL;
     shader_stage[1].flags = 0,
     shader_stage[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    shader_stage[1].module = which_shader->shader_frag;
+    shader_stage[1].module = shader.shaderModule.fragment;
     shader_stage[1].pName = "main";
     shader_stage[1].pSpecializationInfo = NULL;
  
     create_struct(vertex_binding_info,VkVertexInputBindingDescription,
                   .binding = 0,
-                  .stride = which_shader->input.vertex_stride,
+                  .stride = shader.vstride,
                   .inputRate = VK_VERTEX_INPUT_RATE_VERTEX
                   );
 
@@ -942,6 +878,7 @@ bool flexon_vulkan_renderer::create_graphics_pipeline(VkSystem* vksystem, vk_sha
                  .format = VK_FORMAT_R32G32_SFLOAT,
                  .offset = (uint32_t)0,
                  );
+
    create_struct(vertex_input_stage,VkPipelineVertexInputStateCreateInfo,
         .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
         .pNext = NULL,
@@ -959,6 +896,7 @@ bool flexon_vulkan_renderer::create_graphics_pipeline(VkSystem* vksystem, vk_sha
         .flags = (uint32_t)0,
         .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
         .primitiveRestartEnable = VK_FALSE);
+
     create_struct(viewport_state_info, VkPipelineViewportStateCreateInfo,
         .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
         .pNext = NULL,
@@ -1012,6 +950,7 @@ bool flexon_vulkan_renderer::create_graphics_pipeline(VkSystem* vksystem, vk_sha
         .attachmentCount = (uint32_t)1,
         .pAttachments = &color_blend_attachment_info,
         .blendConstants = { 0.0f, 0.0f, 0.0f, 0.0f });
+
     VkDynamicState pipeline_dynamic_state_name[2] = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
     create_struct(pipeline_dynamic_state_info, VkPipelineDynamicStateCreateInfo,
         .sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
@@ -1019,11 +958,12 @@ bool flexon_vulkan_renderer::create_graphics_pipeline(VkSystem* vksystem, vk_sha
         .flags = 0,
         .dynamicStateCount = (uint32_t)2,
         .pDynamicStates = pipeline_dynamic_state_name, );
+
     create_struct(pipeline_rendering_info, VkPipelineRenderingCreateInfoKHR,
         .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR,
         .pNext = NULL,
         .colorAttachmentCount = (uint32_t)1,
-        .pColorAttachmentFormats = &vksystem->render_pool.image_format,
+        .pColorAttachmentFormats = &vkvirtDev.imgformat,
         .depthAttachmentFormat = VK_FORMAT_UNDEFINED,
         .stencilAttachmentFormat = VK_FORMAT_UNDEFINED, );
 
@@ -1041,250 +981,267 @@ bool flexon_vulkan_renderer::create_graphics_pipeline(VkSystem* vksystem, vk_sha
         .pDepthStencilState = nullptr,
         .pColorBlendState = &color_blend_state_info,
         .pDynamicState = &pipeline_dynamic_state_info,
-        .layout = vksystem->pipeline_record_state->layout,
+        .layout = shader.pipelineLayout,
         .renderPass = VK_NULL_HANDLE, );
 
-    vkCreateGraphicsPipelines(vksystem->virtual_device, VK_NULL_HANDLE, (uint32_t)1,
-        &graphics_pipeline_create_info, VK_NULL_HANDLE, &vksystem->pipeline_record_state->pipeline);
-    return true;
+    vkCreateGraphicsPipelines(vkvirtDev.dev, VK_NULL_HANDLE, (uint32_t)1,
+        &graphics_pipeline_create_info, VK_NULL_HANDLE, &shader.shaderPipeline);
+
+   return true;
 };
 
-VkBuffer flexon_vulkan_renderer::create_buffer(VkSystem* vksystem, buffer_create_info *info)
-{
 
-    VkBuffer tmp_buffer;
-    vk_mem_layout* playout = new vk_mem_layout;
-    playout->part_type = info->layout_type;
+/*
+*
+*
+*   CODE TO CREATE SHADER PIPELINE END
+*
+*
+*/
 
-    if (vksystem->mem_record_state->memory_layout == nullptr) {
-        vksystem->mem_record_state->memory_layout = playout;
-        vksystem->mem_record_state->current = playout;
+/*
+*
+*   ___________________________________________________
+*   |                                                 |
+*   |   CODE TO HANDLE RENDERING START                |
+*   |                                                 |
+*   |                                                 |
+*   --------------------------------------------------- 
+*/
 
-    } else {
-        vksystem->mem_record_state->current->next = playout;
-        vksystem->mem_record_state->current = playout;
-    }
 
-    create_struct(buffer_create_info, VkBufferCreateInfo,
-        .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-        .pNext = NULL,
-        .flags = info->flags,
-        .size = info->size,
-        .usage = info->usage_mode,
-        .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
-        .queueFamilyIndexCount = vksystem->physical_device.queue_count,
-        .pQueueFamilyIndices = &vksystem->physical_device.queue_family_index, );
-
-    if (vkCreateBuffer(vksystem->virtual_device, &buffer_create_info, NULL, &tmp_buffer) != VK_SUCCESS) {
-        return VK_NULL_HANDLE;
-    };
-
-    create_struct(memory_requirement, VkMemoryRequirements);
-    vkGetBufferMemoryRequirements(vksystem->virtual_device, tmp_buffer, &memory_requirement);
-    VkDeviceSize aligned_offset = align_offset(memory_requirement.alignment, vksystem->mem_record_state->memory_size);
-
-    playout->part_size = memory_requirement.size + (aligned_offset - vksystem->mem_record_state->memory_size);
-    vksystem->mem_record_state->memory_size += aligned_offset;
-    playout->memory_offset = aligned_offset;
-    vksystem->mem_record_state->memory_size += memory_requirement.size;
-    vksystem->mem_record_state->memory_type_bit |= memory_requirement.memoryTypeBits;
-    playout->bind_member = tmp_buffer;
-
-    return tmp_buffer;
+void flexonrenderer::togglestate(){
+    int current_index = idximage + 1;
+    bool smaller = (current_index < vkvirtDev.imgCount);
+    current_index = current_index * smaller;
+    idximage = current_index;
 };
 
-VkImage flexon_vulkan_renderer::create_image(VkSystem* vksystem, uint32_t height, uint32_t width)
-{
-    VkImage tmp_image = VK_NULL_HANDLE;
-
-    vk_mem_layout* playout = new vk_mem_layout;
-    playout->part_type = MEM_PART_IMAGE_BUF;
-
-    if (vksystem->mem_record_state->memory_layout == nullptr) {
-        vksystem->mem_record_state->memory_layout = playout;
-        vksystem->mem_record_state->current = playout;
-
-    } else {
-      
-        vksystem->mem_record_state->current->next = playout;
-        vksystem->mem_record_state->current = playout;
-    }
-
-    create_struct(vk_image_info, VkImageCreateInfo,
-        .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-        .pNext = NULL,
-        .flags = 0,
-        .imageType = VK_IMAGE_TYPE_2D,
-        .format = VK_FORMAT_R8G8B8A8_SRGB,
-        .extent = { .width = width, .height = height, .depth = (uint32_t)1 },
-        .mipLevels = (uint32_t)1,
-        .arrayLayers = (uint32_t)1,
-        .samples = VK_SAMPLE_COUNT_1_BIT,
-        .tiling = VK_IMAGE_TILING_OPTIMAL,
-        .usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT
-            | VK_IMAGE_USAGE_TRANSFER_SRC_BIT
-            | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
-        .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
-        .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED);
-
-    if (vkCreateImage(vksystem->virtual_device, &vk_image_info,
-            NULL, &tmp_image)
-        != VK_SUCCESS) {
-        return VK_NULL_HANDLE;
-    }
-
-    create_struct(memory_requirement, VkMemoryRequirements);
-    vkGetImageMemoryRequirements(vksystem->virtual_device, tmp_image, &memory_requirement);
-    VkDeviceSize aligned_offset = align_offset(memory_requirement.alignment, vksystem->mem_record_state->memory_size);
-
-    playout->part_size = memory_requirement.size + (aligned_offset - vksystem->mem_record_state->memory_size);
-    vksystem->mem_record_state->memory_size += aligned_offset;
-    playout->memory_offset = aligned_offset;
-    vksystem->mem_record_state->memory_size += memory_requirement.size;
-
-    vksystem->mem_record_state->memory_type_bit |= memory_requirement.memoryTypeBits;
-    playout->bind_member = tmp_image;
-
-    return tmp_image;
+void flexonrenderer::renderframe(){
 };
 
-VkImageView flexon_vulkan_renderer::create_image_view(VkSystem* vksystem, VkImage which_image)
-{
+void flexonrenderer::transitionlayoutstart(shaderWrapper &shaderinfo){
 
-    VkImageView tmp_image_view = VK_NULL_HANDLE;
+ 
+  static struct {
+    uint32_t queueidx;
+    VkImage image;
+   }info;
 
-    create_struct(image_view_create_info, VkImageViewCreateInfo,
-        .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-        .pNext = NULL,
-        .flags = (uint32_t)0,
-        .viewType = VK_IMAGE_VIEW_TYPE_2D,
-        .format = VK_FORMAT_R8G8B8A8_SRGB,
-        .components = { .r = VK_COMPONENT_SWIZZLE_R,
-            .g = VK_COMPONENT_SWIZZLE_G,
-            .b = VK_COMPONENT_SWIZZLE_B,
-            .a = VK_COMPONENT_SWIZZLE_A },
+   info.queueidx = vkphyDev.queueFamilyIndex; 
+   info.image = vkvirtDev.img[idximage];
+
+    create_struct(barrier_info, VkImageMemoryBarrier,
+        .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+        .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+        .newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+        .srcQueueFamilyIndex = info.queueidx,
+        .dstQueueFamilyIndex = info.queueidx,
+        .image = info.image,
         .subresourceRange = {
             .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
             .baseMipLevel = (uint32_t)0,
             .levelCount = (uint32_t)1,
             .baseArrayLayer = (uint32_t)0,
-            .layerCount = (uint32_t)1 });
+            .layerCount = (uint32_t)1 }
+            );
 
-    image_view_create_info.image = which_image;
+    barrier_info.srcAccessMask = 0;
+    barrier_info.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
-    if (vkCreateImageView(vksystem->virtual_device, &image_view_create_info,
-            NULL, &tmp_image_view)
-        != VK_SUCCESS) {
-        return VK_NULL_HANDLE;
-    }
+    vkCmdPipelineBarrier(
+        shaderinfo.cmdbuffer,
+        VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+        0,
+        0, nullptr,
+        0, nullptr,
+        1, &barrier_info);
 
-    return tmp_image_view;
-};
-
-
-void flexon_vulkan_renderer::destroy_image_view(VkSystem* vksystem){
-  render_frame_buffer *view = vksystem->render_pool.frame_buffer;
-  for(int i = 0 ; i < vksystem->render_pool.count ; i++){
-   vkDestroyImageView(vksystem->virtual_device,view[i].image_view,NULL);
-  };
-};
-
-
-void flexon_vulkan_renderer::free_memory_resource(VkSystem* vksystem)
-{
-    for (auto *itr_mem = vksystem->render_pool.memory; itr_mem != nullptr; itr_mem = itr_mem->next) {
-        for (auto *itr_lay = itr_mem->memory_layout; itr_lay != nullptr; itr_lay = itr_lay->next) {
-            switch (itr_lay->part_type) {
-            case MEM_PART_UNIFORM_BUF:
-            case MEM_PART_VERTEX_BUF:
-            case MEM_PART_INDEXED_BUF:
-      
-            case MEM_PART_NOM_BUF:
-                vkDestroyBuffer(vksystem->virtual_device, (VkBuffer)itr_lay->bind_member, NULL);
-                break;
-            case MEM_PART_IMAGE_BUF:
-                vkDestroyImage(vksystem->virtual_device, (VkImage)itr_lay->bind_member, NULL);
-                break;
-            };
-        }
-        if(itr_mem->memory_usage == VK_MEMORY_TYPE_PRIMARY_MAPPED){
-        vkUnmapMemory(vksystem->virtual_device,itr_mem->memory);
-        }
-        vkFreeMemory(vksystem->virtual_device, itr_mem->memory, NULL);
-    }
+  return;
 
 };
 
-void flexon_vulkan_renderer::free_pipeline_resource(VkSystem *vksystem){
 
-  for(auto *itr_pipe = vksystem->render_pool.pipeline ; itr_pipe != nullptr ; itr_pipe = itr_pipe->next){
-    for(auto *itr_shade = itr_pipe->shader ; itr_shade != nullptr ; itr_shade = itr_shade->next){
-      vkDestroyShaderModule(vksystem->virtual_device,itr_shade->shader_vert,NULL); 
-      vkDestroyShaderModule(vksystem->virtual_device,itr_shade->shader_frag,NULL); 
-    }
-      vkDestroyPipelineLayout(vksystem->virtual_device,itr_pipe->layout,NULL);
-      vkDestroyPipeline(vksystem->virtual_device,itr_pipe->pipeline,NULL);
-  }
-};
+void flexonrenderer::transitionlayoutend(shaderWrapper &shaderinfo){
 
+  static struct {
+    uint32_t queueidx;
+    VkImage image;
+   }info;
 
-void flexon_vulkan_renderer::exit_vulkan(enum exitlevel level, VkSystem* vksystem)
-{
+   info.queueidx = vkphyDev.queueFamilyIndex; 
+   info.image = vkvirtDev.img[idximage];
 
-    if (vksystem_down == false) {
-        switch (level) {
-        case EXIT_LEVEL_ALL:
-        case EXIT_LEVEL_GRAPHICS_PIPELINE:
-             free_pipeline_resource(vksystem);
-        case EXIT_LEVEL_RENDER_BUFFER:
-            destroy_image_view(vksystem);
-            free_memory_resource(vksystem);
-        case EXIT_LEVEL_RENDER_PASS:
-        case EXIT_LEVEL_CMD_BUFFER:
-        case EXIT_LEVEL_CMD_POOL:
-            vkDestroyCommandPool(vksystem->virtual_device,
-                vksystem->cmd_pool, nullptr);
-       case EXIT_LEVEL_RESOURCE:
-            destroy_rendersync_resource(vksystem);
-        case EXIT_LEVEL_QUEUE:
-            delete vksystem->physical_device.Queue;
-        case EXIT_LEVEL_VIRTUAL_DEVICE:
-            vkDestroyDevice(vksystem->virtual_device, nullptr);
-        case EXIT_LEVEL_INSTANCE:
-            vkDestroyInstance(vksystem->instance, nullptr);
-        case EXIT_LEVEL_NONE:
-            break;
-        }
-       free_required(vksystem);
-    }
+    create_struct(barrier_info, VkImageMemoryBarrier,
+        .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+        .oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+        .newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+        .srcQueueFamilyIndex = info.queueidx,
+        .dstQueueFamilyIndex = info.queueidx,
+        .image = info.image,
+        .subresourceRange = {
+            .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+            .baseMipLevel = (uint32_t)0,
+            .levelCount = (uint32_t)1,
+            .baseArrayLayer = (uint32_t)0,
+            .layerCount = (uint32_t)1 }
+            );
 
-      vksystem_down = true;
+    barrier_info.srcAccessMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    barrier_info.dstAccessMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
+
+    vkCmdPipelineBarrier(
+        shaderinfo.cmdbuffer,
+        VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+        VK_PIPELINE_STAGE_TRANSFER_BIT,
+        0,
+        0, nullptr,
+        0, nullptr,
+        1, &barrier_info);
 
     return;
-};
-
-template<typename type>
-void free_local(type *which){
-    type *entity = which; 
-    type *next = nullptr;
-    while(entity != nullptr){
-       next = entity->next;
-       delete entity;
-       std::cout<<"FREED : "<<entity<<std::endl;
-       entity = next;
-     }
-};
-
-enum memory_type test_adeng;
-
-void flexon_vulkan_renderer::free_required(VkSystem* vksystem)
-{
-     delete vksystem->render_pool.frame_buffer;
-     delete vksystem->render_pool.image_cmd_buffer;
-     free_local(vksystem->render_pool.pipeline->shader);
-     free_local(vksystem->render_pool.pipeline);
-     free_local(vksystem->render_pool.memory->memory_layout);
-     free_local(vksystem->render_pool.memory);
 
 };
+
+void flexonrenderer::startcmdbuffer(shaderWrapper &shaderinfo){
+
+  static struct {
+    VkCommandBuffer cmd;
+    VkImageView view;
+    VkPipeline pipeline;
+  }info;
+
+  info.cmd = shaderinfo.cmdbuffer;
+  info.view = vkvirtDev.imgView[idximage];
+
+    create_struct(cmd_buffer_info, VkCommandBufferBeginInfo,
+        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+        .pNext = NULL,
+        .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+
+    vkBeginCommandBuffer(info.cmd, &cmd_buffer_info);
+    transitionlayoutstart(shaderinfo);
+
+    create_struct(color_attachment_info, VkRenderingAttachmentInfo,
+        .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+        .pNext = NULL,
+        .imageView = info.view,
+        .imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+        .resolveMode = VK_RESOLVE_MODE_NONE,
+        .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+        .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+        .clearValue = { { 1.0f, 1.0f, 1.0f, 1.0f } });
+
+    create_struct(rendering_info, VkRenderingInfoKHR,
+        .sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR,
+        .pNext = NULL,
+        .renderArea = {
+            .offset = {
+                .x = 0,
+                .y = 0 },
+            .extent = { .width = 500 , .height = 500 } },
+        .layerCount = (uint32_t)1,
+        .viewMask = (uint32_t)0,
+        .colorAttachmentCount = (uint32_t)1, 
+        .pColorAttachments = &color_attachment_info
+                  );
+
+    vkCmdBeginRendering(info.cmd, &rendering_info);
+  /*
+    vkCmdBindPipeline(info.cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, info.pipeline);
+    VkDeviceSize offsets[] = {0};
+    vkCmdBindVertexBuffers(info.cmd, 0, 1,&vksystem->state.shader->input.vertex_buffer, offsets);
+    vkCmdBindIndexBuffer(info.cmd,vksystem->state.shader->input.index_buffer, 0,VK_INDEX_TYPE_UINT32);
+
+    VkViewport viewport {};
+    viewport.x = 0.0f;
+    viewport.y = 0.0f;
+    viewport.width = static_cast<float>(vksystem->surface_width);
+    viewport.height = static_cast<float>(vksystem->surface_height);
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
+    vkCmdSetViewport(info.cmd, 0, 1, &viewport);
+
+    VkRect2D scissor {};
+    scissor.offset = { 0, 0 };
+    scissor.extent = { 500, 500 };
+    vkCmdSetScissor(info.cmd, 0, 1, &scissor);
+    vkCmdDrawIndexed(info.cmd,12, 1, 0, 0, 0);
+    */
+    return;
+
+};
+void flexonrenderer::endcmdbuffer(shaderWrapper &shaderinfo){
+
+  struct {
+    VkCommandBuffer cmd;
+    VkImage image;
+    VkPipeline pipeline;
+  }info;
+
+  info.cmd = shaderinfo.cmdbuffer;
+  info.image = vkvirtDev.img[idximage];
+
+   vkCmdEndRendering(info.cmd);
+
+  transitionlayoutend(shaderinfo);
+
+     create_struct(submit_info, VkSubmitInfo,
+        .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+        .pNext = NULL,
+        .waitSemaphoreCount = (uint32_t)0,
+        .pWaitSemaphores = nullptr,
+        .pWaitDstStageMask = (uint32_t)0,
+        .commandBufferCount = (uint32_t)1,
+        .pCommandBuffers = &info.cmd,
+        .signalSemaphoreCount = (uint32_t)0,
+        .pSignalSemaphores = nullptr);
+
+    vkResetFences(vkvirtDev.dev, 1,&shaderinfo.fence);
+
+    vkQueueSubmit(vkvirtDev.queue, 1, &submit_info,shaderinfo.fence);
+
+
+};
+
+void flexonrenderer::getRenderedBuffer(shaderWrapper &shaderinfo,vec4<uint32_t> extents){
+ struct {
+    VkCommandBuffer cmd;
+    VkImage img;
+  }info;
+
+  info.cmd = shaderinfo.cmdbuffer;
+  info.img = vkvirtDev.img[idximage];
+
+    VkBufferImageCopy region {};
+    region.bufferOffset = 0;
+    region.bufferRowLength = extents.z; // Tightly packed
+    region.bufferImageHeight = extents.w;
+
+    region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    region.imageSubresource.mipLevel = 0;
+    region.imageSubresource.baseArrayLayer = 0;
+    region.imageSubresource.layerCount = 1;
+
+    region.imageOffset = { (int32_t)extents.x, (int32_t)extents.y, 0 };
+    region.imageExtent = { extents.z, extents.w, 1 };
+
+    vkCmdCopyImageToBuffer(
+        info.cmd,
+        info.img, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+        vkvirtDev.winBuffer,
+        1, &region);
+
+    vkEndCommandBuffer(info.cmd);
+
+}
+
+/*
+*
+*
+*   CODE TO HANDLE RENDERING END
+*
+*
+*/
 

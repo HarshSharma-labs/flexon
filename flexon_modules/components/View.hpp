@@ -17,6 +17,4 @@ void View(void(*style)(fiber *wrap),void(*child)());
 
 pview *gettop();
 void flushViewTree();
-void app_main();
-void post_startup(fiber *wrap);
 #endif

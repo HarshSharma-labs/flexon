@@ -64,7 +64,7 @@ typedef struct window_state {
     int rsize = 0;
     bool configured = false;
     bool running = true;
-
+    bool xdg_configured = false;
     uint32_t fresize = WINDOW_RESIZE_NONE;
     uint32_t windowstate = {0};
 
@@ -79,7 +79,7 @@ public:
    
     int create_commit(struct commit_wm *commit);
     void destroy();
-    void dispatchEvent();
+    void dispatchEvent(struct commit_wm *commit);
 
 private:
     struct window_state wm_config = { 0 };

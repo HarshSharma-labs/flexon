@@ -7,16 +7,29 @@ find_package(Vulkan REQUIRED)
 
 
 # Set CMake export compile commands
+set(CMAKE_CXX_STANDARD 20) # For C++17
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_BUILD_TYPE DEBUG)
-set(CMAKE_COMMAND glslc)
 set(ENGINE_NAME flexon)
 
+include_directories(
+    "${PROJECT_SOURCE_DIR}/flexon_modules/*.hpp" 
+    "${PROJECT_SOURCE_DIR}/flexon_modules/components/*.hpp" 
+    "${PROJECT_SOURCE_DIR}/flexon_modules/componentbase/*.hpp" 
+    "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/*.hpp" 
+    "${PROJECT_SOURCE_DIR}/flexon_modules/utilities/*.hpp" 
+    "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/renderer/*.hpp" 
+    "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/windowManager/*.hpp" 
+    "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/windowManager/*.h" 
+
+)
 
 # Find source files
 file(GLOB SRCS_FILES 
       "${PROJECT_SOURCE_DIR}/src/*.cpp"
       "${PROJECT_SOURCE_DIR}/app/*.cpp"
+      "${PROJECT_SOURCE_DIR}/flexon_modules/*.cpp"
       "${PROJECT_SOURCE_DIR}/flexon_modules/subsystem/*.cpp"
       "${PROJECT_SOURCE_DIR}/flexon_modules/utilities/*.cpp" 
       "${PROJECT_SOURCE_DIR}/flexon_modules/components/*.cpp" 

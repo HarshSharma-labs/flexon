@@ -7,6 +7,22 @@
 
 static uint32_t auxcounter = 0;
 
+static void clampGeometry(float &width, float &height, vec2<float>& min ,
+                          vec2<float> &max){
+  
+  if(width < min.x || height < min.y && min.x > 0.0f || min.y > 0.0f){
+       width = min.x;
+       height = min.y;
+       return;  
+   };
+
+  if(width > max.x || height > max.y){
+       width = max.x;
+       height = max.y;
+      return;
+   };
+  return;
+};
 
 static void calculatelayout(base_paint *ppaint, fiber *childs) {
 
@@ -176,22 +192,39 @@ void buildfibertree(void (*node)(), fiber *parent) {
  * height = height of the screen
  */
 
-void initial_commit(void (*node)(), void (*main)(fiber *wrap)) {
-  // std::cout<<std::hex<<fnv_1hash(0xffcaffac)<<std::endl;
+void initial_commit(void (*node)(),
+                void (*main)(fiber *wrap ,vec2<float> &windowDimension),
+                              struct commit_wm *commit){
 
+ 
   fiber *fibermain = new fiber;
   fibermain->fiberid = 1;
-  main(fibermain);
+  main(fibermain,commit->rc.max);
+
   deepCloneFiber(fibermain);
 
   if (fibermain->paint == nullptr) {
     std::cout << "post startup failed exiting.\nprobable cause not"
-                 " commiting a root layout in post_startup function"
+                 "commiting a root layout in post_startup function"
               << std::endl;
     return;
   };
-  utility::ndc::setNDCmat(fibermain->paint->geometry.dimension.z,
-                          fibermain->paint->geometry.dimension.w);
+  
+  float width = fibermain->paint->geometry.dimension.z;
+  float height = fibermain->paint->geometry.dimension.w;
+  commit->min = {fibermain->paint->geometry.bound.x , 
+                fibermain->paint->geometry.bound.y};
+
+  fibermain->paint->geometry.bound = {0};
+  clampGeometry(width,height,
+                commit->min ,commit->rc.max);
+
+  commit->required = {width , height};
+  sem_post(&statemanager::syncstartupback);
+  utility::ndc::setNDCmat(width,height);
+
+  fibermain->paint->geometry.dimension.z = width;
+  fibermain->paint->geometry.dimension.w = height;
   buildfibertree(node, fibermain);
   layoutmanager::sortEventView();
 };
@@ -201,6 +234,7 @@ auto &dataRef = statemanager::returnViewData();
   int size = dataRef.size();
    if(size == 0 || size == 1)
      return;
+
 };
 
 

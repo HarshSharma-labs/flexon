@@ -161,8 +161,20 @@ public:
    };
     modifier &windowDimension(float width , float height){
     if(mine->fiberid == 1){
-      paint.geometry.dimension.z = width;
-      paint.geometry.dimension.w = height;
+        paint.geometry.dimension.z = width;
+        paint.geometry.dimension.w = height;
+        paint.geometry.bound.x = 500.0f;
+        paint.geometry.bound.y = 500.0f;
+       };
+    return *this;
+    };
+
+  modifier &windowDimension(float width , float height , vec2<float> minsize){
+    if(mine->fiberid == 1){
+         paint.geometry.dimension.z = width;
+         paint.geometry.dimension.w = height;
+         paint.geometry.bound.x = minsize.x;
+         paint.geometry.bound.y = minsize.y;
        };
     return *this;
     };

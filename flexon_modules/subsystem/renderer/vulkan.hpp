@@ -1,53 +1,33 @@
 // #define VK_ONLY_EXPORTED_PROTOTYPES
+#ifndef __FLEXON_VULKAN_IMPLEMENTATION
+#define __FLEXON_VULKAN_IMPLEMENTATION
+#pragma once
+
 #include <algorithm>
 #include <cstdint>
 #include <cstring>
 #include <iostream>
 #include <limits>
 #include <map>
+#include <unordered_map>
 #include <set>
+#include <deque>
+#include <functional>
 #include <vector>
 #include <vulkan/vulkan.h>
 #include <wayland-client.h>
+#include "../../components/base.hpp"
 
 #ifndef NDEBUG
 #define VALIDATION_LAYER_MAX 1
 #endif
 
+#define TOTAL_QUEUE_COUNT 1
+#define IMAGE_COUNT 3
+
+
 #define create_struct(name, type, ...) \
     type name = (type) { __VA_ARGS__ }
-
-
-extern bool vksystem_down;
-
-enum memory_type{
- VK_MEMORY_TYPE_PRIMARY = 1,
- VK_MEMORY_TYPE_PRIMARY_MAPPED,
-
- VK_MEMORY_TYPE_SHADER,
- VK_MEMORY_TYPE_SHADER_MAPPED,
-
- VK_MEMORY_TYPE_TEXTURE,
- VK_MEMORY_TYPE_TEXTURE_MAPPED,
-
-};
-
-enum memory_layout_type{
-
-  MEM_PART_NOM_BUF = 1,
-
-  MEM_PART_IMAGE_BUF,
-
-  MEM_PART_UNIFORM_BUF,
-  MEM_PART_VERTEX_BUF,
-  MEM_PART_INDEXED_BUF,
-
-};
-
-enum shader_type{
- VK_SHADER_VIEW = 1,
- VK_SHADER_CIRCLE,
-};
 
 
 enum exitlevel {
@@ -63,317 +43,177 @@ enum exitlevel {
     EXIT_LEVEL_INSTANCE,
     EXIT_LEVEL_NONE
 };
-
-typedef struct sync_resource {
-    VkFence image_fence = VK_NULL_HANDLE;
-    VkSemaphore image_start_semaphore = VK_NULL_HANDLE;
-    VkSemaphore image_end_semaphore = VK_NULL_HANDLE;
-  } sync_resource;
-
-typedef struct render_buffer{
-    VkImage image = VK_NULL_HANDLE;
-    VkImageView image_view = VK_NULL_HANDLE;
-    VkDeviceSize image_offset {0};
-    sync_resource sync;
- }render_frame_buffer;
+//defines index in queuearray;
 
 
-typedef struct shader_input{
 
- uint32_t vertex_stride {0}; 
- uint32_t uniform_stride {0};
- uint32_t indexbuffer_stride {0};
 
- size_t vertex_size {0};
- size_t uniform_size {0};
- size_t indexbuffer_size {0};
-
- VkBuffer vertex_buffer;
- VkBuffer uniform_buffer;
- VkBuffer index_buffer;
-
- void *vertex_data = nullptr;
- void *uniform_data = nullptr;
- void *index_data = nullptr;
-
-}shader_input;
-
-typedef struct vk_shader{
-
-  enum shader_type shader_type;
+enum SHADER_ID{
+  NORMAL_SHADER_ID = 1,
+  IMAGE_SHADER_ID,
+  BOX_SHADER_ID,
+};
+enum SHADER_TYPES{
+ NORMAL_SHADER = 1,
+ IMAGE_SHADER = -1,
+ BOX_SHADER = -1,
+// SHADER_QUEUE_TOTAL,
   
-  uint32_t *compiled_code_frag = nullptr;
-  uint32_t *compiled_code_vert = nullptr;
-
-  shader_input input;
-
-  struct vk_shader *next = nullptr;
-
-  VkShaderModule shader_vert = VK_NULL_HANDLE;
-  VkShaderModule shader_frag = VK_NULL_HANDLE;
-
-  size_t code_size_vert = 0;
-  size_t code_size_frag = 0;
-  
- 
-}vk_shader;
-
-
-typedef struct render_state{
-  
-  uint32_t current_index = {0};
-  uint32_t *raw_pixel = nullptr;
-  uint32_t *surface_pixel = nullptr;
-  
-  VkPipelineStageFlags src_stage_mask;
-  VkPipelineStageFlags dst_stage_mask;
-  
-  VkImageLayout initial_layout;
-  VkImageLayout final_layout;
- 
-  VkAccessFlags src_access_flag;
-  VkAccessFlags dst_access_flag;
-
-
-  render_frame_buffer fb;
-
-  vk_shader *shader = nullptr;
-  
-  VkPipeline pipeline = VK_NULL_HANDLE;
-  VkBuffer cpy_buffer = VK_NULL_HANDLE;
-  VkCommandBuffer current_cmd_buffer;
-
-}render_state;
-
-typedef struct vk_mem_layout{
-
-  enum memory_layout_type part_type;
-  struct vk_mem_layout *next = nullptr;
-  VkDeviceSize memory_offset = 0;
-  VkDeviceSize part_size = 0;
-  void *bind_member = nullptr;
-
-}vk_mem_layout;
-
-
-typedef struct vk_memory{
-
-  // define the purpose for which the memory will be used
-  enum memory_type memory_usage;
-  // memory type bits of all entity combined
-  uint32_t memory_type_bit = 0;
-  // vk_memory will be a linked list;
-  struct vk_memory *next = nullptr;  
-  // memory handle of the system
-  VkDeviceMemory memory = VK_NULL_HANDLE;
-  // defines the total memory size required by resource;
-  VkDeviceSize memory_size = 0;
-  //used to track the current layout and attach next to it;
-  vk_mem_layout *current = nullptr;
-  // memory layout depends on how much sub-allocation we want;
-  vk_mem_layout *memory_layout = nullptr;
-
-}vk_memory;
-
-enum pipeline_type{
-    VK_PIPELINE_TYPE_PRIMARY,
-    VK_PIPELINE_TYPE_TEXT,
-    VK_PIPELINE_TYPE_SVG
+};
+enum MEMORY_HOLDER{
+  IMAGE_MEMORY = 1,
+  STAGING_DISPLAY_MEMORY,
+  NORMAL_SHADER_MEMORY,
+  IMAGER_SHADER_MEMORY,
+  BOX_SHADER_MEMORY,
 };
 
-typedef struct vk_pipeline{
+struct sdev{
+ VkPhysicalDevice dev;
+ VkPhysicalDeviceType type;
+ uint32_t memoryTypeIndex;
+ uint32_t queueFamilyIndex;
+};
 
-  enum pipeline_type type;
-  struct vk_pipeline *next = nullptr;
-  struct vk_shader *shader = nullptr;
-  VkPipeline pipeline = VK_NULL_HANDLE;
-  VkPipelineLayout layout = VK_NULL_HANDLE;
+struct vdev{
+ VkDevice dev;
+ VkQueue queue;
+ VkCommandPool vkcmdpool;
+ VkImage *img;
+ VkImageView *imgView;
+ VkBuffer winBuffer;
+ VkBuffer vertexBuffer;
+ VkBuffer uniformBuffer;
+ VkBuffer indexBuffer;
+ VkDescriptorPool descriptorpool;
+ uint32_t *vkpixel = nullptr;
+ uint32_t imgCount;
+ uint32_t qCount;
+ float qPriority;
+ VkFormat imgformat;
+};
 
-}vk_pipeline;
-
-typedef struct pipeline_info{
-   enum shader_type stype; // shader type
-   enum pipeline_type ptype; // pipeline type
-  
-   shader_input input;
-   char *vtx_code = nullptr;
-   char *frag_code = nullptr;
-
-}pipeline_info;
-
-
-
-typedef struct render {
-
-    uint32_t count {3};
-    VkFormat image_format = VK_FORMAT_R8G8B8A8_SRGB;
-
-    VkBuffer staging_buffer;
-
-    vk_memory *memory = nullptr;
-    vk_pipeline *pipeline = nullptr;
-
-    render_frame_buffer *frame_buffer = nullptr;
-    VkCommandBuffer *image_cmd_buffer = nullptr;
-    
-    VkPipeline graphics_pipeline = VK_NULL_HANDLE;
-    VkPipelineLayout graphics_pipeline_layout = VK_NULL_HANDLE;
-    
- } render;
-
-typedef struct physicalDeviceConf {
-
-    int device_score { 0 };
-    uint32_t queue_family_index { 0 };
-    uint32_t queue_count = 1;
-    uint32_t memory_type_index = 0;
-    float queue_priority = 1.0f;
-    VkMemoryPropertyFlags required_memory_type = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
-        | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
-        | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-
-    VkPhysicalDevice device = VK_NULL_HANDLE;
-    VkQueue* Queue = nullptr;
-
-} physical_device_conf;
-
-typedef struct VkSystem {
-
-    uint32_t api_version { 0 };
-    uint32_t default_weight { 720 };
-    uint32_t default_width { 1080 };
-
-    uint32_t surface_height { 500 };
-    uint32_t surface_width { 500 };
-    const int device_extension_count = 1;
-
-  
-    vk_memory *mem_record_state = nullptr;
-    vk_shader *shader_record_state = nullptr;
-    vk_pipeline *pipeline_record_state = nullptr;
-
-    wl_surface* vulkan_wayland_surface_ptr = nullptr;
-    wl_display* vulkan_wayland_display_ptr = nullptr;
-
-    VkInstance instance = VK_NULL_HANDLE;
-    VkDevice virtual_device = VK_NULL_HANDLE;
-    VkCommandPool cmd_pool = VK_NULL_HANDLE;
-
-    physical_device_conf physical_device;
-    render render_pool;
-    render_state state;
-
-  const char* extension_name[1] = {
-        VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
+struct memlayout{
+   VkDeviceSize partsize;
+   VkDeviceSize offset;
  };
 
-} VkSystem;
+struct memory{
+ VkDeviceMemory mem;
+ VkDeviceSize memsize;
+ struct memlayout *layout;
+ uint32_t layoutCount;
+};
 
-typedef struct buffer_create_info{
-  enum memory_layout_type layout_type;
+typedef struct buffercreateinfo{ 
   VkBufferUsageFlags usage_mode {0};
   VkBufferCreateFlags flags {0};
   VkDeviceSize size {0};
-}buffer_create_info;
+  struct memory mem;
+}buffercreateinfo;
 
-class flexon_vulkan_renderer {
+typedef struct shadercompile{
+uint32_t vcodesize;
+uint32_t *vtxCode;
+uint32_t fcodesize;
+uint32_t *frgCode;
+}shadercompile;
+
+typedef struct modulereturn{
+ VkShaderModule vertex;
+ VkShaderModule fragment;
+}modulereturn;
+
+typedef struct shaderWrapper{
+ uint32_t shaderType;
+ VkPipeline shaderPipeline;
+ VkPipelineLayout pipelineLayout;
+ modulereturn shaderModule;
+ VkDescriptorSetLayout descriptorlayout;
+ VkSampler sampler;
+ VkCommandBuffer cmdbuffer;
+ void *vertpointer;
+ void *uniformPtr;
+ uint32_t vstride;
+ uint32_t fstride;
+ uint32_t bindingloc;
+ uint32_t vertbufSize;
+ VkFence fence;
+}shaderWrapper;
+
+class flexonrenderer {
 public:
-    void initlise();
-    void mount_surface(wl_surface* surface, wl_display* display,
-                       uint32_t *pixels)
-    {
-        vksystem.vulkan_wayland_surface_ptr = surface;
-        vksystem.vulkan_wayland_display_ptr = display;
-        vksystem.state.surface_pixel = pixels;
-      
-    };
-    void commit_render_request();
 
-   
-    void destroy_renderer();
-    void render();
-
+  int initlise();
+  void setExtents(uint32_t *pixel , vec2<uint32_t> extents);
+  void destroy();
 private:
-    VkSystem vksystem;
+ uint32_t vkapiversion;
+
+ bool vksysdown = false;
+
+ const int extensionCount = 1;
+ const char* extensionName[1] = {VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME};
+
+ struct sdev vkphyDev;
+ struct vdev vkvirtDev;
+ uint32_t *pixel;
+
+ uint32_t idximage = 0;
+
+ vec2<uint32_t> imageExtents;
+
+ VkInstance vkinstance = VK_NULL_HANDLE;
+ std::unordered_map<uint32_t,memory> vkmemory;
+ std::unordered_map<uint32_t,shaderWrapper> shaders;
+
+ VkMemoryPropertyFlags imemtype = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
+                                 | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
+                                 | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+
+ VkMemoryPropertyFlags dmemtype = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+                                 
+
+ struct sdev selectPhysicalDevice(VkInstance instance , auto &devices);
+ int getQueueFamilyIndex(VkPhysicalDevice dev , sdev &store);
+ int scoreDevice(VkPhysicalDevice device ,sdev &store);
+ int getMemoryIndex(VkPhysicalDevice device , uint32_t typefilter);
+ struct memory createImage(VkImage **store , VkImageView **viewstore , 
+                           uint32_t cimg,uint32_t cview,
+                           vec2<uint32_t> dimension);
+
+ VkBuffer createBuffer(buffercreateinfo &info);
+ VkCommandBuffer createcmdbuffer();
+
+ shadercompile compileshader(const char* vertCode, const char* fragCode);
+ bool createPipeline(shaderWrapper &shader);
+ modulereturn createShaderModule(shadercompile &rawcode);
+ VkDescriptorSetLayout createDescriptorSet(shaderWrapper &shader);
 
 #ifndef NDEBUG
-
     const int enableLayerCount = VALIDATION_LAYER_MAX;
     const char* validationLayer[VALIDATION_LAYER_MAX] = {
         "VK_LAYER_KHRONOS_validation"
-    };
-
-    bool checkValidationLayerSupport(const char** layerName,
-        const int* count);
-
+    };  
 #endif
 
-    bool filter_physical_device(VkSystem* vksystem,
-        std::vector<VkPhysicalDevice>& devices_list);
+bool createInstance();
+bool getPhysicalDevice();
+bool createVirtualDevice();
+bool getQueue();
+bool createCmdPool();
+bool createImage();
+bool createShader();
 
-    int score_device(VkSystem* vksystem,
-        physical_device_conf* device_conf,
-        VkPhysicalDevice which_device);
+void togglestate();
+void renderframe();
+void transitionlayoutstart(shaderWrapper &shaderinfo);
+void transitionlayoutend(shaderWrapper &shaderinfo);
+void getRenderedBuffer(shaderWrapper &shaderinfo,vec4<uint32_t> extents);
+void startcmdbuffer(shaderWrapper &shaderinfo);
+void endcmdbuffer(shaderWrapper &shaderinfo);
+void exit_vulkan(enum exitlevel level);
 
-    bool find_suitable_queue_family(VkSystem* vksystem,
-        physical_device_conf* device_config,
-        VkPhysicalDevice& phy_device);
-
-    int32_t find_suitable_memory_properties(VkSystem* vksystem,
-                                         VkMemoryPropertyFlags optimal_memory_type, 
-                                         uint32_t memory_type_bit_requirements);
-    
-    void allocate_required(VkSystem *vksystem);
-    void free_required(VkSystem *vksystem);
- 
-    void start_memory_recording(VkSystem *vksystem, 
-                                enum memory_type usage);
-
-    // memory is allocated here;
-    void end_memory_recording(VkSystem *vksystem);
-
-
-    void begin_shader_recording(VkSystem *vksystem,enum shader_type type);
-    bool load_shader(VkSystem *vksystem,const char *vtx_shader_code,
-                     const char *frag_shader_code);
-
-    bool create_shader_module(VkSystem *vksystem);
-    vk_shader* end_shader_recording(VkSystem *vksystem);
-
-    void free_memory_resource(VkSystem *vksystem); 
-    VkBuffer create_buffer(VkSystem* vksystem ,buffer_create_info *info);
-
-    VkImage create_image(VkSystem* vksytem,uint32_t height,uint32_t width);
-    VkImageView create_image_view(VkSystem *vksystem,VkImage which_image);
-
-    void begin_pipeline_recording(VkSystem *vksystem ,pipeline_info *info);
-
-
-    bool create_graphics_pipeline(VkSystem *vksystem , vk_shader *which_shader);
-    vk_pipeline* end_pipeline_recording(VkSystem *vksystem);
-  
-    bool create_instance(VkSystem* vksystem);
-    bool select_physical_device(VkSystem* vksystem);
-    bool get_queue(VkSystem* vksystem);
-    bool create_virtual_device(VkSystem* vksystem);
-    bool create_cmd_pool(VkSystem* vksystem);
-    bool create_cmd_buffer(VkSystem* vksystem);
-    bool create_rendersync_resource(VkSystem *vksystem); 
-    bool create_render_buffer(VkSystem *vksystem);  
-    bool create_pipeline(VkSystem *vksystem);
-    void destroy_rendersync_resource(VkSystem* vksystem);
-    void destroy_image_view(VkSystem* vksystem);
-    void destroy_render_buffer(VkSystem* vksystem);
-    void exit_vulkan(enum exitlevel level, VkSystem* vksystem);
-    void free_pipeline_resource(VkSystem *vksystem);
-   
-    void transition_layout_start(VkSystem *vksystem);
-    void transition_layout_end(VkSystem *vksystem);
-    void toggle_state(VkSystem *vksystem);
-    void render_frame(VkSystem* vksystem);
-    void lets_see(VkSystem* vksystem);
-
-
-    void start_cmd_buffer(VkSystem *vksystem);
-    void end_cmd_buffer(VkSystem *vksystem);
 };
+
+#endif

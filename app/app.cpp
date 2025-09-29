@@ -2,19 +2,20 @@
 #include "../flexon_modules/components/View.hpp"
 #include "../flexon_modules/components/decorator.hpp"
 #include "../flexon_modules/components/matrices.hpp"
+#include "../flexon_modules/flexon.hpp"
 #include <iostream>
 
 
-void post_startup(fiber *wrap){
+void flexon::post_startup(fiber *wrap , vec2<float> &windowDimension){
  modifier root;
   root.context(wrap).display('f').layoutDirection('r')
-    .windowDimension(500.0f,500.0f)
+    .windowDimension(10.0f,10.0f)
     .padding({20.0f,20.0f,20.0f,20.0f})
     .borderWidth({20.0f,10.0f,40.0f,30.0f})
     .commitContext();
 };
 
-void app_main(){
+void flexon::app_main(){
 
 View([](fiber *wrap){
      modifier style;
@@ -34,14 +35,18 @@ View([](fiber *wrap){
     modifier style;
     style.context(wrap).display('f').flex(1.0f).commitContext();
   },[](){
- 
+    modifier::onPress([](void *args){
+      std::cout<<"child"<<std::endl;
+     });
+    modifier::commitEvent();
+
  });
 
 });
 
 View([](fiber *wrap){
     modifier style;
-    style.context(wrap).display('n').flex(0.0f).commitContext();
+    style.context(wrap).display('f').flex(1.0f).commitContext();
   },[](){
  
  });

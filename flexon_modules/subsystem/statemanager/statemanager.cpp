@@ -4,62 +4,75 @@
 #include "../layoutmanager/layout.hpp"
 #include "../../components/base.hpp"
 
-statemanager::statemanager(){
+void statemanager::statemanagerinit(){
   Pevent = eventQueue;
-  
-  sem_init(&signaldispatchEvent,0,1);
-  sem_init(&syncback,0,1);
 
-  sem_init(&syncstatemanager,0,1);
-  sem_wait(&syncstatemanager);
+  statemanager::pointerEventViews.reserve(DEFAULT_PRESS_QUEUE_SIZE);
+  sem_init(&statemanager::syncstartup,0,1);
+  sem_init(&statemanager::syncstartupback,0,1);
+  sem_init(&statemanager::dispatchCallbackExt,0,1);
+  sem_init(&statemanager::signaldispatchEvent,0,1);
+  sem_init(&statemanager::syncback,0,1);
+
+  sem_init(&statemanager::syncstatemanager,0,1);
+  sem_wait(&statemanager::syncstatemanager);
+  sem_wait(&statemanager::dispatchCallbackExt);
 
 };
 
-struct event_wrapper dispatcherQueue[EVENT_QUEUE_SIZE];
 
 void statemanager::registerEvents(struct event_wrapper *event , int index){
-
-    utility::strings::memcpy64(event,&dispatcherQueue[index],eventWrapperSize64);
-    EventContinue = true; 
-    sem_post(&syncstatemanager);
-
+        utility::strings::memcpy64(event,&statemanager::dispatcherQueue[index],
+                               eventWrapperSize64);
+  
+        sem_post(&syncstatemanager);
+ 
+  return; 
 };
 
 void statemanager::dispatchEvents(){
   //don't touch critical section
   int state = -1;
-// are previous x and y location;
-float px = 0.0f ,py = 0.0f;
-
+  // are previous x and y location;
+  float px = 0.0f ,py = 0.0f;
+     
 labelDispatchEvent:
-  if(!EventContinue){
-     sem_wait(&syncstatemanager);
-    };
 
+
+  sem_wait(&statemanager::syncstatemanager);
+    
   state += 1;
   bool valid = (state < EVENT_QUEUE_SIZE);
   state *= valid;
+
   switch(dispatcherQueue[state].event_type){
     case EVENT_TYPE_POINTER:
-      stackPointerEvent(dispatcherQueue[state].epointer,px,py); 
-      utility::strings::memset64((dispatcherQueue + state),0,eventWrapperSize64);
+      stackPointerEvent(statemanager::dispatcherQueue[state].epointer
+                        ,px,py,state); 
+      utility::strings::memset64((statemanager::dispatcherQueue + state),
+                                           0,eventWrapperSize64);     
+    
     break;
     case EVENT_TYPE_KEYBOARD:
     break;
-  };
-
-  EventContinue = false;
+  }
+  
   goto labelDispatchEvent;
 
 };
 
-void statemanager::stackPointerEvent(struct pointer_event &event,float &px , float &py){
+void statemanager::stackPointerEvent(struct pointer_event &event,float &px , float &py, int state){
   uint32_t trigger = 0;
 
   switch(event.event_type){
    case WL_POINTER_EVENT_BUTTON:
       trigger = layoutmanager::CheckBound(px , py,pointerEventViews);
-      std::cout<<"pressed "<<trigger<<std::endl;
+      if(trigger != 0){
+         auto func = pressCallbacklist[trigger];
+         statemanager::submiteddispatchCallback[state].call = func.onpress;
+         submitdispatchfomindex = state; 
+         sem_post(&statemanager::dispatchCallbackExt); 
+        }
    break;
    case WL_POINTER_EVENT_ENTER:
   

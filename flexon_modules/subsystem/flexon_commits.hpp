@@ -1,6 +1,6 @@
 #ifndef __FLEXON_COMMIT__
 #define __FLEXON_COMMIT__
-#include <semaphore.h>
+#include "../components/matrices.hpp"
 
 
 struct commit_info{
@@ -17,18 +17,17 @@ struct rcommit_info{
 
 
 struct rcommit_wm{
- uint32_t fheight;
- uint32_t fwidth;
+ vec2<float> max;
+ vec2<uint32_t> umax;
  uint32_t *pixels;
  struct wl_display* display;
  struct wl_surface* surface;
 };
 
 struct commit_wm{
-  sem_t signal;
   char *name;
-  uint32_t width;
-  uint32_t height;
+  vec2<float> required;
+  vec2<float> min;
   rcommit_wm rc;
 };
 

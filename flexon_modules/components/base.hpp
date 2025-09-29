@@ -162,7 +162,9 @@ typedef struct callbackfunction{
  void(*onHover)(void *args);
 }callbackfunction;
 
-
+struct dispatch_callback{
+ void(*call)(void *args); 
+};
 typedef struct base_quad{
   // (x,y) of all four pdd
   // ints in ndc
@@ -194,6 +196,7 @@ typedef struct base_geo{
 
 
 enum captured_event_type{
+  EVENT_TYPE_NONE = 0,
   EVENT_TYPE_KEYBOARD = 1,
   EVENT_TYPE_POINTER,
 };

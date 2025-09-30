@@ -5,6 +5,7 @@
 #include "xdg-output.h"
 #include "../flexon_commits.hpp"
 #include "wayland-callback.hpp"
+#include "../../flexon.hpp"
 
 class waylandWM;
 
@@ -64,24 +65,27 @@ typedef struct window_state {
     int rsize = 0;
     bool configured = false;
     bool running = true;
-    bool xdg_configured = false;
+    bool configuredxdg = false;
+    bool maxconfig = false;
     uint32_t fresize = WINDOW_RESIZE_NONE;
     uint32_t windowstate = {0};
 
     bool resized = false;
 
     uint32_t *pixels;
-    
+    struct pointer_event pointer_state;
+    struct key_event keystate;
+
  }window_state;
 
 class waylandWM {
 public:
-   
-    int create_commit(struct commit_wm *commit);
+    waylandWM(window window);
     void destroy();
-    void dispatchEvent(struct commit_wm *commit);
+    void dispatchEvent();
 
 private:
-    struct window_state wm_config = { 0 };
-   };
+   void checkbound(window &window);    
+   struct window_state wmconfig = { 0 };
+};
 #endif

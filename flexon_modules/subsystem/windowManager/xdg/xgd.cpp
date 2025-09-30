@@ -18,8 +18,9 @@ const struct xdg_wm_base_listener xdg_wm_base_callback_listener = {
 
 static void xdg_surface_callback_configure(void* data, struct xdg_surface* xdg_surface, uint32_t serial)
 {
-    struct window_state *wayland_config = (window_state *)data;
+    struct window_state *info = (window_state *)data;
     xdg_surface_ack_configure(xdg_surface, serial);
+  
  }
 
 const struct xdg_surface_listener xdg_surface_callback_listener = {
@@ -61,6 +62,7 @@ static void xdg_configure_bounds(void *data,struct xdg_toplevel *xdg_toplevel,
   struct window_state *info = (struct window_state*)data;
   info->width_bound = width;
   info->height_bound = height;
+  info->configuredxdg = true;
 }
 
 const struct xdg_toplevel_listener xdg_surface_callback_listener_toplevel = {

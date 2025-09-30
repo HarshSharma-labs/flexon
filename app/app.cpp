@@ -6,16 +6,14 @@
 #include <iostream>
 
 
-void flexon::post_startup(fiber *wrap , vec2<float> &windowDimension){
- modifier root;
-  root.context(wrap).display('f').layoutDirection('r')
-    .windowDimension(10.0f,10.0f)
-    .padding({20.0f,20.0f,20.0f,20.0f})
-    .borderWidth({20.0f,10.0f,40.0f,30.0f})
-    .commitContext();
+window flexon::window = {
+.flag = WINDOW_FULL_SCREEN,
+.name =(char *)"hello world",
+.width = 10,
+.height = 100000
 };
 
-void flexon::app_main(){
+void flexon::appmain(){
 
 View([](fiber *wrap){
      modifier style;
@@ -51,6 +49,6 @@ View([](fiber *wrap){
  
  });
 
-}
+};
 
 

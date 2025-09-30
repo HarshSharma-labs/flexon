@@ -227,6 +227,8 @@ void initial_commit(void (*node)(),
   fibermain->paint->geometry.dimension.w = height;
   buildfibertree(node, fibermain);
   layoutmanager::sortEventView();
+  sem_post(&statemanager::dispatchrender);
+
 };
 
 void layoutmanager::sortEventView(){

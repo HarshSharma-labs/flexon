@@ -1,6 +1,12 @@
-#include "../flexon_modules/subsystem/threads/thread.hpp"
-int main() {
+#include "../flexon_modules/subsystem/windowManager/wayland.hpp"
+#include "../flexon_modules/flexon.hpp"
 
-  __call__thread__subsystem();
+int main() {
+  waylandWM window_manager(flexon::window);
+  window_manager.dispatchEvent();
+  statemanager manager;
+  manager.dispatchEvents();
+
   return 0;
+
 }

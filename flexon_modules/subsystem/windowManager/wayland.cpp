@@ -13,6 +13,8 @@
 void resize(void *data){
     
     struct window_state *info = (struct window_state*)data;
+    if(info->dwidth <= 0 || info->dheight <=0 )
+       return;
 
     int rstride = info->dwidth * sizeof(uint32_t);  
     int rsize = rstride * info->dheight;
@@ -42,16 +44,15 @@ void resize(void *data){
   }; 
 
   
-  
+    for(int i = 0; i < info->dwidth*info->dheight ; i ++){
+     info->pixels[i] = 0xffffffff;
+    };
     wl_surface_attach(info->surface, info->display_buffer, 0,0);
     wl_surface_damage(info->surface, 0, 0, info->dwidth, info->dheight);
     wl_surface_commit(info->surface);
-
   
-  for(int i = 0; i < (info->dwidth * info->dheight) ; i ++){
-    info->pixels[i] = 0xffffffff;
-  };
-          
+  
+           
 };
 
 static void randname(char* buf)
@@ -71,7 +72,9 @@ int allocate_shm(void* data)
 
     int height = info->display_height;
     int width = info->display_width;
-  
+    if(width <= 0 || height <=0 )
+     return -1;
+
     char name[] = "/wl_shm-XXXXXX";
     randname(name + sizeof(name) - 7);
 
@@ -135,9 +138,7 @@ static void register_global(void* data, wl_registry* registry, uint32_t name, co
        bypass->xdg_output = zxdg_output_manager_v1_get_xdg_output(bypass->xdg_output_manager , 
                                                                      bypass->display_output);
        zxdg_output_v1_add_listener(bypass->xdg_output, &xdg_output_listener, data);
-     }
-
- 
+     } 
 }
 
 static void remove_global(void* data, wl_registry* registry, uint32_t name)
@@ -150,97 +151,129 @@ static const struct wl_registry_listener display_registry_listener = {
     .global_remove = remove_global
 };
 
+void waylandWM::checkbound(window &window){
+  
 
+  if(window.width < 200){
+    window.width = 200;
+  }
+  if(window.height < 200){
+     window.height = 200;
+  };
+   
+  if(window.width > wmconfig.display_width){
+     window.width = wmconfig.display_width;
+  };
+  if( window.height > wmconfig.display_height){ 
+     window.height = wmconfig.display_height - 200;
+  };
 
-int waylandWM::create_commit(struct commit_wm* commit)
+};
+
+ waylandWM::waylandWM(window window)
 {
 
 
     if(keyboard_init() != 0){
        std::cout<<"[PANIC] Cannot create a keyboard system";
-       return -1;
+       return;
     }
      
 
-    wm_config.app_name = commit->name;
-    wm_config.display = wl_display_connect(NULL);
-    wm_config.display_fd = wl_display_get_fd(wm_config.display);
-    wm_config.registry = wl_display_get_registry(wm_config.display);
+    wmconfig.app_name = window.name;
+    wmconfig.display = wl_display_connect(NULL);
+    wmconfig.display_fd = wl_display_get_fd(wmconfig.display);
+    wmconfig.registry = wl_display_get_registry(wmconfig.display);
     
 
-    wl_registry_add_listener(wm_config.registry, &display_registry_listener, &wm_config);
-    wl_display_roundtrip(wm_config.display);
+    wl_registry_add_listener(wmconfig.registry, &display_registry_listener, &wmconfig);
+    wl_display_roundtrip(wmconfig.display);
 
-    if (wm_config.display == NULL || wm_config.display_compositor == NULL) {
+    if (wmconfig.display == NULL || wmconfig.display_compositor == NULL) {
         std::cout << "cannot connect to wayland display" << std::endl;
-        return -1;
+        return ;
     }
 
-    wm_config.surface = wl_compositor_create_surface(wm_config.display_compositor);
+    wmconfig.surface = wl_compositor_create_surface(wmconfig.display_compositor);
 
-    if (wm_config.surface == NULL) {
+    if (wmconfig.surface == NULL) {
         std::cout << "cannot create wayland surface" << std::endl;
-        return -1;
+        return ;
     }
 
-    wm_config.display_xdg_surface = xdg_wm_base_get_xdg_surface(wm_config.display_xdg_base, wm_config.surface);
-    wm_config.xdg_surface_toplevel = xdg_surface_get_toplevel(wm_config.display_xdg_surface);
+    wmconfig.display_xdg_surface = xdg_wm_base_get_xdg_surface(wmconfig.display_xdg_base, wmconfig.surface);
+    wmconfig.xdg_surface_toplevel = xdg_surface_get_toplevel(wmconfig.display_xdg_surface);
 
-    xdg_surface_add_listener(wm_config.display_xdg_surface, &xdg_surface_callback_listener, &wm_config);
+    wl_surface_commit(wmconfig.surface);
+    while (wl_display_dispatch(wmconfig.display) != -1 && !wmconfig.configured);
+
+    xdg_surface_add_listener(wmconfig.display_xdg_surface, &xdg_surface_callback_listener, &wmconfig);
+    xdg_toplevel_add_listener(wmconfig.xdg_surface_toplevel, &xdg_surface_callback_listener_toplevel, &wmconfig);
+
+    
+    xdg_toplevel_set_max_size(wmconfig.xdg_surface_toplevel,
+                                wmconfig.display_width, wmconfig.display_height);
+
+
   
-    wl_surface_commit(wm_config.surface);
+    wmconfig.dwidth = 200;
+    wmconfig.dheight = 200;
    
-    while (wl_display_dispatch(wm_config.display) != -1 && !wm_config.configured);
+    switch(window.flag){
+     case WINDOW_FULL_SCREEN:
+      xdg_toplevel_set_fullscreen(wmconfig.xdg_surface_toplevel,wmconfig.display_output);
+      wmconfig.windowstate = WINDOW_STATE_MAXIMIZED_FULL; 
+      break;
+     case WINDOW_FULL_TOPBAR_SHOWN:
+       xdg_toplevel_set_maximized(wmconfig.xdg_surface_toplevel);
+       wmconfig.windowstate =  WINDOW_STATE_MAXIMIZED_BOUNDED;
+      break;
+      case WINDOW_CUSTOM_SIZE:
+        checkbound(window);
+        wmconfig.dwidth = window.width;
+        wmconfig.dheight = window.height;
+        std::cout<<window.width<<" : "<<window.height<<std::endl; 
+      break;
+    };
 
-    xdg_toplevel_add_listener(wm_config.xdg_surface_toplevel, &xdg_surface_callback_listener_toplevel, &wm_config);
+    if(allocate_shm(&wmconfig) == -1){
+     std::cout<<"allocation failed"<<std::endl;
+    };
 
-  
-       xdg_toplevel_set_max_size(wm_config.xdg_surface_toplevel,
-                                wm_config.display_width, wm_config.display_height);
-   
+     while (wl_display_dispatch(wmconfig.display) != -1 && !wmconfig.configuredxdg);
 
-    commit->rc.max.x = static_cast<float>(wm_config.display_height);
-    commit->rc.max.y = static_cast<float>(wm_config.display_width);
-    commit->rc.umax.x = wm_config.display_height;
-    commit->rc.umax.y = wm_config.display_width;
-    commit->rc.pixels = wm_config.pixels;
-    commit->rc.display = wm_config.display;
-    commit->rc.surface = wm_config.surface;
-     
-    return 0;
+      xdg_toplevel_set_title(wmconfig.xdg_surface_toplevel, window.name);
+      xdg_toplevel_set_app_id(wmconfig.xdg_surface_toplevel, window.name);
+      xdg_toplevel_set_min_size(wmconfig.xdg_surface_toplevel,200, 200);
+
+    return ;
 }
 
-void waylandWM::dispatchEvent(struct commit_wm *commit)
+void waylandWM::dispatchEvent()
 {
-    wm_config.dwidth = static_cast<uint32_t>(commit->required.x);
-    wm_config.dheight = static_cast<uint32_t>(commit->required.y);
-    xdg_toplevel_set_title(wm_config.xdg_surface_toplevel, commit->name);
-    xdg_toplevel_set_app_id(wm_config.xdg_surface_toplevel, commit->name);
-    xdg_toplevel_set_min_size(wm_config.xdg_surface_toplevel, 
-                              commit->min.x, commit->min.y);
 
-  
-    allocate_shm(&wm_config);
+    
+   
 
-    while (wl_display_dispatch(wm_config.display) && wm_config.running){
-      if(wm_config.resized == true){
-        resize(&wm_config);
-        wm_config.resized = false;
+  while (wl_display_dispatch(wmconfig.display) && wmconfig.running){
+      if(wmconfig.resized == true){
+        resize(&wmconfig);
+        wmconfig.resized = false;
       }
     }
 }
 void waylandWM::destroy()
 {
-    close(wm_config.shm_fd);
-    munmap(wm_config.pixels, wm_config.size);
-    wl_shm_pool_destroy(wm_config.display_shm_pool);
-    xdg_toplevel_destroy(wm_config.xdg_surface_toplevel);
-    xdg_surface_destroy(wm_config.display_xdg_surface);
-    wl_surface_destroy(wm_config.surface);
-    xdg_wm_base_destroy(wm_config.display_xdg_base);
-    wl_compositor_destroy(wm_config.display_compositor);
-    wl_registry_destroy(wm_config.registry);
-    wl_display_disconnect(wm_config.display);
+    close(wmconfig.shm_fd);
+    munmap(wmconfig.pixels, wmconfig.size);
+    wl_shm_pool_destroy(wmconfig.display_shm_pool);
+    xdg_toplevel_destroy(wmconfig.xdg_surface_toplevel);
+    xdg_surface_destroy(wmconfig.display_xdg_surface);
+    wl_surface_destroy(wmconfig.surface);
+    xdg_wm_base_destroy(wmconfig.display_xdg_base);
+    wl_compositor_destroy(wmconfig.display_compositor);
+    wl_registry_destroy(wmconfig.registry);
+    wl_display_disconnect(wmconfig.display);
 
     return;
 }

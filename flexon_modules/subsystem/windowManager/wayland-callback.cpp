@@ -11,14 +11,14 @@
 
 constexpr size_t loop = sizeof(struct pointer_event)/sizeof(uint64_t);
 
-static struct pointer_event *pointer_state;
-static struct key_event *key_state;
+struct pointer_event *pointer_state;
+ struct key_event *key_state;
 
   
 static void pointer_button(void *data, struct wl_pointer *pointer,
 		    uint32_t serial, uint32_t time, uint32_t button, uint32_t state) {
 
-
+    struct pointer_event *pointer_state = (struct pointer_event *)data;
     pointer_state->event_type = WL_POINTER_EVENT_BUTTON;
     pointer_state->serial = serial;
     pointer_state->button = button,
@@ -31,7 +31,8 @@ static void pointer_button(void *data, struct wl_pointer *pointer,
 static void pointer_enter (void *data, struct wl_pointer *wl_pointer,uint32_t serial,
 		      struct wl_surface *surface,wl_fixed_t surface_x,wl_fixed_t surface_y){
     
-    pointer_state = statemanager::getNextPointerQueue(); 
+  
+    struct pointer_event *pointer_state = (struct pointer_event *)data;
     pointer_state->event_type = WL_POINTER_EVENT_ENTER;
     pointer_state->x = wl_fixed_to_double(surface_x);
     pointer_state->y = wl_fixed_to_double(surface_y);
@@ -43,23 +44,20 @@ static void pointer_enter (void *data, struct wl_pointer *wl_pointer,uint32_t se
 static void pointer_leave(void *data,struct wl_pointer *wl_pointer,
 		                        uint32_t serial,struct wl_surface *surface){
     
-
+    struct pointer_event *pointer_state = (struct pointer_event *)data;
     pointer_state->event_type = WL_POINTER_EVENT_LEAVE;
     pointer_state->serial = serial;
-    std::cout<<"mouse leave"<<std::endl;
-
+ 
 };
 
 
 static void pointer_motion(void *data,struct wl_pointer *wl_pointer,
 		             uint32_t time, wl_fixed_t surface_x,wl_fixed_t surface_y){
 
-
+    struct pointer_event *pointer_state = (struct pointer_event *)data;
     pointer_state->event_type = WL_POINTER_EVENT_MOTION;
- 
     pointer_state->x = wl_fixed_to_double(surface_x);
     pointer_state->y = wl_fixed_to_double(surface_y);
-
     pointer_state->time = time;
   
 
@@ -69,6 +67,7 @@ static void pointer_motion(void *data,struct wl_pointer *wl_pointer,
 static void pointer_axis(void *data, struct wl_pointer *wl_pointer,
 		                           uint32_t time,uint32_t axis,wl_fixed_t value){
 
+    struct pointer_event *pointer_state = (struct pointer_event *)data;
     pointer_state->event_type = WL_POINTER_EVENT_AXIS;
     pointer_state->time = time;
     pointer_state->axis[axis].valid = 1;
@@ -90,13 +89,14 @@ static void pointer_frame(void *data,struct wl_pointer *wl_pointer){
      // flexon::memset64(&pointer_state,0,loop);
   
    
-   pointer_state = statemanager::getNextPointerQueue(); 
-   utility::strings::memset64(pointer_state,0,7);
+//   pointer_state = statemanager::getNextPointerQueue(); 
+  // utility::strings::memset64(pointer_state,0,7);
 };
 
 static void pointer_axis_source(void *data, struct wl_pointer *wl_pointer,
                              			    uint32_t axis_source){
 
+    struct pointer_event *pointer_state = (struct pointer_event *)data;
     pointer_state->event_type = WL_POINTER_EVENT_AXIS_SOURCE;
     pointer_state->axis_source = axis_source;
 };
@@ -104,6 +104,7 @@ static void pointer_axis_source(void *data, struct wl_pointer *wl_pointer,
 static void pointer_axis_stop(void *data, struct wl_pointer *wl_pointer,
 		                                uint32_t time,uint32_t axis){
 
+    struct pointer_event *pointer_state = (struct pointer_event *)data;
     pointer_state->event_type = WL_POINTER_EVENT_AXIS_STOP;
     pointer_state->time = time;
     pointer_state->axis[axis].valid = 1;
@@ -112,7 +113,7 @@ static void pointer_axis_stop(void *data, struct wl_pointer *wl_pointer,
 static void pointer_axis_discrete(void *data, struct wl_pointer *wl_pointer,
                                    uint32_t axis,int32_t discrete){
   
-
+    struct pointer_event *pointer_state = (struct pointer_event *)data;
     pointer_state->event_type = WL_POINTER_EVENT_AXIS_DISCRETE;
     pointer_state->axis[axis].valid = 1;
     pointer_state->axis[axis].discrete = discrete; 
@@ -174,13 +175,15 @@ void keyboard_enter(void *data, struct wl_keyboard *wl_keyboard,
                    uint32_t serial,struct wl_surface *surface,
                                        struct wl_array *keys){
 
-  key_state = statemanager::getNextKeyboardQueue();
+  struct key_event *key_state = (struct key_event *)data;
+  //do some stuff;
 
 };
 
 void keyboard_leave(void *data,struct wl_keyboard *wl_keyboard,
                               uint32_t serial,struct wl_surface *surface){
-
+  struct key_event *key_state = (struct key_event *)data;
+ //do some stuff;
 };
 
 void keyboard_key(void *data,struct wl_keyboard *wl_keyboard,
@@ -188,7 +191,7 @@ void keyboard_key(void *data,struct wl_keyboard *wl_keyboard,
                                         uint32_t key,uint32_t state){
 
 
-   key_state = statemanager::getNextKeyboardQueue();
+   struct key_event *key_state = (struct key_event *)data;
    xkb_keysym_t sym = xkb_state_key_get_one_sym(key_xkb_state, key + 8);
    key_state->serial = serial;
    key_state->key = sym;
@@ -235,13 +238,13 @@ static void seat_capability_callback(void* data, struct wl_seat* wl_seat,
 
     if (keyboardPresent && bypass->display_keyboard == NULL) {
         bypass->display_keyboard = wl_seat_get_keyboard(wl_seat);
-        wl_keyboard_add_listener(bypass->display_keyboard, &keyboard_listener,data);
+        wl_keyboard_add_listener(bypass->display_keyboard, &keyboard_listener,&bypass->keystate);
       
     }
 
    if (capabilities & WL_SEAT_CAPABILITY_POINTER) {
 	  	 bypass->display_pointer = wl_seat_get_pointer(wl_seat);
-	  	wl_pointer_add_listener(bypass->display_pointer, &pointer_listener,data);
+	  	wl_pointer_add_listener(bypass->display_pointer, &pointer_listener,&bypass->pointer_state);
 	 }
 };
 

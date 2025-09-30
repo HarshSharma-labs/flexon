@@ -17,6 +17,8 @@
 #include <vulkan/vulkan.h>
 #include <wayland-client.h>
 #include "../../components/base.hpp"
+#include "./shaders/shader_code.hpp"
+#include "../../components/base.hpp"
 
 #ifndef NDEBUG
 #define VALIDATION_LAYER_MAX 1
@@ -43,10 +45,6 @@ enum exitlevel {
     EXIT_LEVEL_INSTANCE,
     EXIT_LEVEL_NONE
 };
-//defines index in queuearray;
-
-
-
 
 enum SHADER_ID{
   NORMAL_SHADER_ID = 1,
@@ -132,14 +130,24 @@ typedef struct shaderWrapper{
  VkDescriptorSetLayout descriptorlayout;
  VkSampler sampler;
  VkCommandBuffer cmdbuffer;
- void *vertpointer;
- void *uniformPtr;
- uint32_t vstride;
+ vertexshaderdata *pvertex;
+ void *puniform;
+ void *pidxpointer;
  uint32_t fstride;
- uint32_t bindingloc;
- uint32_t vertbufSize;
+ uint32_t vstride;
+ uint32_t offset;
+ uint32_t idxsize;
+ uint32_t vsize;
+ uint32_t usize;
  VkFence fence;
 }shaderWrapper;
+
+typedef struct {
+  uint8_t buffertype;
+  enum SHADER_ID shaderid;
+  uint32_t voffset;
+  uint32_t uoffset;
+}flexonCommandBuffer;
 
 class flexonrenderer {
 public:
@@ -147,7 +155,11 @@ public:
   int initlise();
   void setExtents(uint32_t *pixel , vec2<uint32_t> extents);
   void destroy();
+  static void initRenderCmdBuffer();
+  static void createrendercmdbuffer(fiber *from);
+
 private:
+  static inline std::vector<flexonCommandBuffer> flexonDrawCommand;
  uint32_t vkapiversion;
 
  bool vksysdown = false;
@@ -188,7 +200,8 @@ private:
  shadercompile compileshader(const char* vertCode, const char* fragCode);
  bool createPipeline(shaderWrapper &shader);
  modulereturn createShaderModule(shadercompile &rawcode);
- VkDescriptorSetLayout createDescriptorSet(shaderWrapper &shader);
+ VkDescriptorSetLayout createDescriptorSetLayout(
+                                   VkDescriptorSetLayoutBinding *bindings);
 
 #ifndef NDEBUG
     const int enableLayerCount = VALIDATION_LAYER_MAX;

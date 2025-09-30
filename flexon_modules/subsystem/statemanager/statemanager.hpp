@@ -62,9 +62,10 @@ public:
  SIC sem_t syncstartup;
  SIC sem_t syncstartupback;
  SIC sem_t dispatchCallbackExt;
- 
+ SIC sem_t dispatchrender;
  SIC struct dispatch_callback submiteddispatchCallback[DEFAULT_PRESS_QUEUE_SIZE];
  SIC int submitdispatchfomindex = 0;
+ 
 private:
 
 SCE int KeventSize64 = sizeof(struct key_event) / sizeof(uint64_t);

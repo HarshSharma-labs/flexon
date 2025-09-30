@@ -1,7 +1,11 @@
 #include "./vulkan.hpp"
-#include "./shaders/shader_code.hpp"
 #include <shaderc/shaderc.hpp>
 
+
+struct pipelineInfo{
+  VkPipelineLayout lay;
+  VkPipeline pipe;
+};
 
 struct DeletionQueue
 {
@@ -12,7 +16,8 @@ struct DeletionQueue
   std::vector<VkShaderModule> shader;
   std::vector<VkBuffer> buffer;
   std::vector<VkDeviceMemory> memory;
-  std::vector<VkPipeline> pipeline;
+  std::vector<pipelineInfo> pipeline;
+  std::vector<VkDescriptorSetLayout> descriptorset;
   VkDevice mine;
 
   void initlise(VkDevice dev){
@@ -25,6 +30,8 @@ struct DeletionQueue
     buffer.reserve(100);
     memory.reserve(10);
     pipeline.reserve(10);
+    descriptorset.reserve(100);
+
   };
 
   void pushshader(VkShaderModule mod){
@@ -50,7 +57,13 @@ struct DeletionQueue
   void pushmemory(VkDeviceMemory tmp){
     memory.push_back(tmp);
   };
-  
+  void pushpipeline(struct pipelineInfo tmp){
+     pipeline.push_back(tmp);
+  }
+  void pushDescriptor(VkDescriptorSetLayout tmp){
+    descriptorset.push_back(tmp);
+  };
+
 	void flush() {
    for(auto &itr: shader)
      vkDestroyShaderModule(mine,itr,VK_NULL_HANDLE);
@@ -67,7 +80,14 @@ struct DeletionQueue
     for(auto &itr: buffer)
      vkDestroyBuffer(mine,itr,VK_NULL_HANDLE);
   
-  
+    for(auto &itr: pipeline){
+     vkDestroyPipeline(mine,itr.pipe,VK_NULL_HANDLE);
+     vkDestroyPipelineLayout(mine,itr.lay,VK_NULL_HANDLE);
+    };
+    for(auto &itr:descriptorset){
+     vkDestroyDescriptorSetLayout(mine,itr,VK_NULL_HANDLE);
+    };
+
     for(auto &itr:memory)
       vkFreeMemory(mine, itr, VK_NULL_HANDLE);
 
@@ -802,8 +822,25 @@ modulereturn flexonrenderer::createShaderModule(shadercompile &rawcode){
 };
 
 
+VkDescriptorSetLayout flexonrenderer::createDescriptorSetLayout(VkDescriptorSetLayoutBinding *bindings){
+
+  VkDescriptorSetLayout tmp;
+  create_struct(layinfo,VkDescriptorSetLayoutCreateInfo,
+                .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+                .bindingCount = (uint32_t)1,
+                .pBindings = bindings
+                );
+
+  if(vkCreateDescriptorSetLayout(vkvirtDev.dev,&layinfo,nullptr,&tmp) != VK_SUCCESS)
+    return VK_NULL_HANDLE;
+
+  delQue.pushDescriptor(tmp);
+
+  return tmp;
+};
 
 bool flexonrenderer::createShader(){
+
   buffercreateinfo vertexbuffer = {0};
   buffercreateinfo uniformbuffer = {0};
   buffercreateinfo indexbuffer = {0};
@@ -819,12 +856,42 @@ bool flexonrenderer::createShader(){
    indexbuffer.size = sizeof(vertexshaderdata) * NORMAL_SHADER_VERTEX_SIZE;
    shadercompile normalcompiled = compileshader(normalShaderCodeVertex,normalShaderCodeFragment); 
    normalshaderWrapper.shaderModule = createShaderModule(normalcompiled);
+   normalshaderWrapper.offset = 0;
+   normalshaderWrapper.usize = uniformbuffer.size;
+   normalshaderWrapper.vsize = uniformbuffer.size;
+   normalshaderWrapper.idxsize = indexbuffer.size;
+   normalshaderWrapper.vstride =  sizeof(vertexshaderdata); 
+
+
+   create_struct(uboLayoutBinding ,VkDescriptorSetLayoutBinding , 
+                  .binding = (uint32_t)0,
+                  .descriptorCount = (uint32_t)1,
+                  .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+                  .pImmutableSamplers = nullptr
+                 );
+
+   uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+   normalshaderWrapper.descriptorlayout = createDescriptorSetLayout(&uboLayoutBinding);
+   createPipeline(normalshaderWrapper);
   }
- 
+   
   vkvirtDev.vertexBuffer = createBuffer(vertexbuffer); 
   vkvirtDev.uniformBuffer = createBuffer(uniformbuffer); 
   vkvirtDev.indexBuffer = createBuffer(indexbuffer);
 
+  void *vtmpmap;
+  void *utmpmap;
+  void *idxtmpmap;
+
+  vkMapMemory(vkvirtDev.dev,vertexbuffer.mem.mem,0,VK_WHOLE_SIZE,0,&vtmpmap);
+  vkMapMemory(vkvirtDev.dev,uniformbuffer.mem.mem,0,VK_WHOLE_SIZE,0,&utmpmap);
+  vkMapMemory(vkvirtDev.dev,indexbuffer.mem.mem,0,VK_WHOLE_SIZE,0,&idxtmpmap);
+
+  normalshaderWrapper.pvertex = (vertexshaderdata*) vtmpmap;
+  normalshaderWrapper.puniform = utmpmap;
+  normalshaderWrapper.pidxpointer = idxtmpmap;
+
+  shaders[NORMAL_SHADER] = normalshaderWrapper;
 
  return true;
 };
@@ -838,10 +905,11 @@ bool flexonrenderer::createPipeline(shaderWrapper &shader){
   create_struct(pipeline_layout_info, VkPipelineLayoutCreateInfo,
         .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
         .pNext = NULL,
-        .setLayoutCount = (uint32_t)0,
-        .pSetLayouts = nullptr,
+        .setLayoutCount = (uint32_t)1,
+        .pSetLayouts = &shader.descriptorlayout,
         .pushConstantRangeCount = (uint32_t)0,
         .pPushConstantRanges = nullptr, );
+
     if (vkCreatePipelineLayout(vkvirtDev.dev, &pipeline_layout_info, nullptr, &shader.pipelineLayout) 
     != VK_SUCCESS) {
         std::cout << "[PIPELINE] Layout Creation Failed\n";
@@ -987,6 +1055,8 @@ bool flexonrenderer::createPipeline(shaderWrapper &shader){
     vkCreateGraphicsPipelines(vkvirtDev.dev, VK_NULL_HANDLE, (uint32_t)1,
         &graphics_pipeline_create_info, VK_NULL_HANDLE, &shader.shaderPipeline);
 
+    delQue.pushpipeline({shader.pipelineLayout,shader.shaderPipeline});
+
    return true;
 };
 
@@ -1018,6 +1088,7 @@ void flexonrenderer::togglestate(){
 };
 
 void flexonrenderer::renderframe(){
+  togglestate();
 };
 
 void flexonrenderer::transitionlayoutstart(shaderWrapper &shaderinfo){
@@ -1168,7 +1239,7 @@ void flexonrenderer::startcmdbuffer(shaderWrapper &shaderinfo){
     scissor.extent = { 500, 500 };
     vkCmdSetScissor(info.cmd, 0, 1, &scissor);
     vkCmdDrawIndexed(info.cmd,12, 1, 0, 0, 0);
-    */
+  */
     return;
 
 };
@@ -1201,7 +1272,6 @@ void flexonrenderer::endcmdbuffer(shaderWrapper &shaderinfo){
     vkResetFences(vkvirtDev.dev, 1,&shaderinfo.fence);
 
     vkQueueSubmit(vkvirtDev.queue, 1, &submit_info,shaderinfo.fence);
-
 
 };
 
@@ -1241,6 +1311,41 @@ void flexonrenderer::getRenderedBuffer(shaderWrapper &shaderinfo,vec4<uint32_t> 
 *
 *
 *   CODE TO HANDLE RENDERING END
+*
+*
+*/
+
+/*
+*
+*   ___________________________________________________
+*   |                                                 |
+*   |   CODE TO HANDLE FIBER RENDERING                |
+*   |                                                 |
+*   |                                                 |
+*   --------------------------------------------------- 
+*/
+
+void flexonrenderer::initRenderCmdBuffer(){
+  flexonDrawCommand.reserve(500);
+};
+
+void flexonrenderer::createrendercmdbuffer(fiber *from){
+fiber *continueFrom = nullptr;
+bool continuebuffer = false;
+
+  auto buildcmdBuffer = [](){
+
+  };
+  for(fiber *itr = from ; itr->child != nullptr; itr = itr->next);
+
+
+};
+
+
+/*
+*
+*
+*   CODE TO HANDLE FIBER RENDERING END
 *
 *
 */

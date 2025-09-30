@@ -15,9 +15,11 @@ void statemanager::statemanagerinit(){
   sem_init(&statemanager::syncback,0,1);
 
   sem_init(&statemanager::syncstatemanager,0,1);
+  sem_init(&statemanager::dispatchrender,0,1);
+
   sem_wait(&statemanager::syncstatemanager);
   sem_wait(&statemanager::dispatchCallbackExt);
-
+  sem_wait(&statemanager::dispatchrender);
 };
 
 

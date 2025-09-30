@@ -344,10 +344,13 @@ public:
     statemanager::registerEventCallback(mine, tmpcallbackholder);
     }
   };
-
+  static void enableModiferDiff(){
+   enableDiffmode = true;
+  };
 private:
 
   static inline fiber *mine = nullptr;
+  static inline bool enableDiffmode = false;
   base_paint paint;
   //base_geo paint.geometry;
 
